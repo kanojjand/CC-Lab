@@ -1,0 +1,64 @@
+<%- include('partials/top', { title: 'Обзор' }) %>
+<div class="page-top">
+  <div><h1>Обзор</h1><p>Привет<%= user.name ? ', ' + user.name : '' %>! Вот что происходит в лаборатории.</p></div>
+  <div class="page-actions"><a class="btn" href="/admin/products/new">+ Новая разработка</a></div>
+</div>
+
+<% if (productStats.demo) { %>
+<div class="notice">
+  <p><strong>В каталоге <%= productStats.demo %> демо-<%= plural(productStats.demo, 'разработка', 'разработки', 'разработок') %>.</strong> Они нужны, чтобы посмотреть, как выглядит сайт. Отредактируйте их под себя или удалите одной кнопкой.</p>
+  <form method="post" action="/admin/demo/delete" data-confirm="Удалить все демо-разработки? Отредактированные вами не пострадают.">
+    <input type="hidden" name="_csrf" value="<%= csrf %>">
+    <button class="btn btn-ghost btn-sm" type="submit">Удалить демо-данные</button>
+  </form>
+</div>
+<% } %>
+
+<div class="stats">
+  <a class="stat<%= leadStats.new ? ' hot' : '' %>" href="/admin/leads?status=new"><b><%= leadStats.new %></b><span>Новые заявки</span></a>
+  <a class="stat" href="/admin/leads"><b><%= leadStats.total %></b><span>Всего заявок</span></a>
+  <a class="stat" href="/admin/products?status=published"><b><%= productStats.published || 0 %></b><span>Опубликовано</span></a>
+  <a class="stat" href="/admin/products?status=draft"><b><%= productStats.drafts || 0 %></b><span>Черновики</span></a>
+</div>
+
+<div class="two-col">
+  <section class="panel">
+    <div class="panel-head"><h2>Последние заявки</h2><a class="linkish" href="/admin/leads">Все заявки</a></div>
+    <% if (recentLeads.length) { %>
+    <div class="table-wrap"><table class="table responsive">
+      <thead><tr><th>Кто</th><th>Разработка</th><th>Статус</th><th>Дата</th></tr></thead>
+      <tbody>
+      <% recentLeads.forEach((l) => { %>
+        <tr>
+          <td data-label="Кто"><a href="/admin/leads#lead-<%= l.id %>"><b><%= l.name %></b></a><br><span class="dim"><%= l.organization || l.contact %></span></td>
+          <td data-label="Разработка"><%= l.product_title || '—' %></td>
+          <td data-label="Статус"><span class="pill <%= l.status %>"><%= leadStatuses[l.status] %></span></td>
+          <td data-label="Дата" class="dim"><%= fmtDate(l.created_at) %></td>
+        </tr>
+      <% }) %>
+      </tbody>
+    </table></div>
+    <% } else { %>
+    <div class="empty-state"><%- include('../partials/mark') %>Заявок пока нет. Они появятся здесь, как только кто-то заполнит форму на сайте.</div>
+    <% } %>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head"><h2>Недавно изменённые</h2><a class="linkish" href="/admin/products">Все разработки</a></div>
+    <% if (recentProducts.length) { %>
+    <div class="table-wrap"><table class="table">
+      <tbody>
+      <% recentProducts.forEach((p) => { %>
+        <tr>
+          <td><div class="prod-cell"><div class="thumb"><% if (p.cover) { %><img src="/uploads/<%= p.cover %>" alt=""><% } else { %><%- coverArt(p.id) %><% } %></div><div><a href="/admin/products/<%= p.id %>/edit"><%= p.title %></a><small><%= p.code %></small></div></div></td>
+          <td class="actions"><span class="pill <%= p.status %>"><%= p.status === 'published' ? 'Опубликовано' : 'Черновик' %></span></td>
+        </tr>
+      <% }) %>
+      </tbody>
+    </table></div>
+    <% } else { %>
+    <div class="empty-state">Пока нет ни одной разработки. <a href="/admin/products/new">Создать первую →</a></div>
+    <% } %>
+  </section>
+</div>
+<%- include('partials/bottom') %>

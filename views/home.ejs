@@ -1,0 +1,131 @@
+<%- include('partials/top', { canonical: '/' }) %>
+
+<section class="hero">
+  <div class="wrap hero-inner">
+    <div class="hero-copy">
+      <span class="eyebrow"><%= settings.site_full_name %></span>
+      <h1><%= settings.hero_title %></h1>
+      <p class="hero-lead"><%= settings.hero_subtitle %></p>
+      <div class="hero-actions">
+        <a class="btn" href="/catalog">Открыть каталог <span class="arrow">→</span></a>
+        <a class="btn btn-ghost" href="#contacts">Обсудить проект</a>
+      </div>
+      <dl class="hero-stats">
+        <div><dd><%= totalPublished %></dd><dt><%= plural(totalPublished, 'разработка', 'разработки', 'разработок') %> в каталоге</dt></div>
+        <div><dd><%= categories.length %></dd><dt><%= plural(categories.length, 'направление', 'направления', 'направлений') %></dt></div>
+        <div><dd>1:1</dd><dt>внедрение под школу</dt></div>
+      </dl>
+    </div>
+    <div class="hero-visual" aria-hidden="true">
+      <%- heroRings() %>
+      <%- include('partials/mark') %>
+    </div>
+  </div>
+</section>
+
+<% if (categories.length) { %>
+<div class="ticker" aria-hidden="true">
+  <div class="ticker-track">
+    <% for (let i = 0; i < 2; i++) { %><% for (let r = 0; r < 3; r++) { categories.forEach((c) => { %><span><%= c.name %></span><% }) } %><% } %>
+  </div>
+</div>
+
+<section class="section">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <div>
+        <span class="eyebrow">Направления</span>
+        <h2>Что есть в лаборатории</h2>
+      </div>
+      <a class="link-arrow" href="/catalog">Весь каталог →</a>
+    </div>
+    <div class="cat-grid reveal">
+      <% categories.forEach((c, i) => { %>
+      <a class="cat-tile" href="/catalog?category=<%= c.slug %>">
+        <span class="num"><%= String(i + 1).padStart(2, '0') %></span>
+        <span class="go" aria-hidden="true">↗</span>
+        <h3><%= c.name %></h3>
+        <% if (c.description) { %><p><%= c.description %></p><% } %>
+        <span class="count"><%= c.count %> <%= plural(c.count, 'разработка', 'разработки', 'разработок') %></span>
+      </a>
+      <% }) %>
+    </div>
+  </div>
+</section>
+<% } %>
+
+<section class="section">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <div>
+        <span class="eyebrow">Каталог</span>
+        <h2>Избранные разработки</h2>
+      </div>
+      <a class="link-arrow" href="/catalog">Смотреть все →</a>
+    </div>
+    <% if (featured.length) { %>
+    <div class="grid">
+      <% featured.forEach((p) => { %><div class="reveal"><%- include('partials/card', { p }) %></div><% }) %>
+    </div>
+    <% } else { %>
+    <div class="empty">
+      <%- include('partials/mark') %>
+      <h3>Каталог скоро наполнится</h3>
+      <p>Мы готовим первые разработки к публикации. Оставьте заявку — расскажем, что уже можно внедрить.</p>
+      <a class="btn" href="/request">Оставить заявку</a>
+    </div>
+    <% } %>
+  </div>
+</section>
+
+<section class="section" id="schools">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <div>
+        <span class="eyebrow">Школам</span>
+        <h2>Как мы работаем со школами</h2>
+        <p>От заявки до первого урока — с понятными сроками, документами и поддержкой педагогов.</p>
+      </div>
+    </div>
+    <ol class="steps reveal">
+      <li><h3>Заявка</h3><p>Выбираете разработку в каталоге или описываете задачу — перезвоним и уточним детали.</p></li>
+      <li><h3>Демо и подбор</h3><p>Показываем продукт, подбираем программу под классы, оборудование и учебный план.</p></li>
+      <li><h3>Внедрение</h3><p>Запускаем сайт или курс, передаём материалы и обучаем педагогов работе с ними.</p></li>
+      <li><h3>Поддержка</h3><p>Остаёмся на связи: обновляем материалы, отвечаем на вопросы, помогаем с отчётностью.</p></li>
+    </ol>
+  </div>
+</section>
+
+<section class="section" id="about">
+  <div class="wrap about">
+    <div class="reveal">
+      <span class="eyebrow">О лаборатории</span>
+      <h2 class="h-gap"><%= settings.site_name %> — <%= settings.site_full_name %></h2>
+    </div>
+    <div class="reveal">
+      <div class="about-text prose"><%- md(settings.about_text) %></div>
+      <div class="values">
+        <div><strong>Готово к уроку</strong><span>Поурочные планы, презентации и задания — учителю не нужно собирать курс с нуля.</span></div>
+        <div><strong>Под ключ</strong><span>Сайт, программа и обучение педагогов в одном проекте.</span></div>
+        <div><strong>Методика</strong><span>Разработки создают вместе программисты и практикующие педагоги.</span></div>
+        <div><strong>Поддержка</strong><span>Обновления и помощь после запуска, а не только до оплаты.</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="contacts">
+  <div class="wrap contact-grid">
+    <div class="reveal">
+      <span class="eyebrow">Контакты</span>
+      <h2 class="h-gap">Обсудим вашу школу?</h2>
+      <p class="muted lead-gap">Расскажите, что хотите запустить, — подготовим предложение с составом, сроками и стоимостью.</p>
+      <%- include('partials/contacts') %>
+    </div>
+    <div class="reveal" id="request-form">
+      <%- include('partials/lead-form', { anchor: 'request-form' }) %>
+    </div>
+  </div>
+</section>
+
+<%- include('partials/bottom') %>

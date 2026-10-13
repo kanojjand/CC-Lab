@@ -1,0 +1,56 @@
+<%- include('partials/top', { title: 'Разработки' }) %>
+<div class="page-top">
+  <div><h1>Разработки</h1><p>Курсы, сайты, программы — всё, что видно в каталоге.</p></div>
+  <div class="page-actions"><a class="btn" href="/admin/products/new">+ Новая разработка</a></div>
+</div>
+
+<form class="filters" method="get" action="/admin/products">
+  <input type="search" name="q" value="<%= filters.q %>" placeholder="Поиск по названию…" aria-label="Поиск">
+  <select name="status" aria-label="Статус" data-autosubmit>
+    <option value="">Все статусы</option>
+    <option value="published"<%= filters.status === 'published' ? ' selected' : '' %>>Опубликованные</option>
+    <option value="draft"<%= filters.status === 'draft' ? ' selected' : '' %>>Черновики</option>
+  </select>
+  <select name="category" aria-label="Категория" data-autosubmit>
+    <option value="">Все категории</option>
+    <% categories.forEach((c) => { %><option value="<%= c.id %>"<%= filters.category === c.id ? ' selected' : '' %>><%= c.name %></option><% }) %>
+  </select>
+  <button class="btn btn-ghost" type="submit">Найти</button>
+</form>
+
+<section class="panel">
+  <% if (products.length) { %>
+  <div class="table-wrap"><table class="table responsive">
+    <thead><tr><th>Разработка</th><th>Категория</th><th>Цена</th><th>Статус</th><th>Изменено</th><th></th></tr></thead>
+    <tbody>
+    <% products.forEach((p) => { %>
+      <tr>
+        <td><div class="prod-cell"><div class="thumb"><% if (p.cover) { %><img src="/uploads/<%= p.cover %>" alt=""><% } else { %><%- coverArt(p.id) %><% } %></div><div><a href="/admin/products/<%= p.id %>/edit"><%= p.title %></a><small><%= p.code %> · /<%= p.slug %></small></div></div></td>
+        <td data-label="Категория"><%= p.category_name || '—' %></td>
+        <td data-label="Цена" class="mono nowrap"><%= fmtPrice(p.price) %></td>
+        <td data-label="Статус">
+          <span class="pill <%= p.status %>"><%= p.status === 'published' ? 'Опубликовано' : 'Черновик' %></span>
+          <% if (p.featured) { %><span class="pill star">Хит</span><% } %>
+          <% if (p.is_demo) { %><span class="pill">демо</span><% } %>
+        </td>
+        <td data-label="Изменено" class="dim"><%= fmtDate(p.updated_at) %></td>
+        <td class="actions">
+          <a class="btn btn-ghost btn-sm" href="/catalog/<%= p.slug %>" target="_blank" rel="noopener">Открыть ↗</a>
+          <a class="btn btn-ghost btn-sm" href="/admin/products/<%= p.id %>/edit">Изменить</a>
+          <form class="inline-form" method="post" action="/admin/products/<%= p.id %>/status">
+            <input type="hidden" name="_csrf" value="<%= csrf %>">
+            <input type="hidden" name="status" value="<%= p.status === 'published' ? 'draft' : 'published' %>">
+            <button class="btn btn-sm<%= p.status === 'published' ? ' btn-ghost' : '' %>" type="submit"><%= p.status === 'published' ? 'Снять' : 'Опубликовать' %></button>
+          </form>
+        </td>
+      </tr>
+    <% }) %>
+    </tbody>
+  </table></div>
+  <% } else { %>
+  <div class="empty-state"><%- include('../partials/mark') %>
+    <% if (filters.q || filters.status || filters.category) { %>Ничего не найдено. <a href="/admin/products">Сбросить фильтры</a><% } else { %>Здесь будут ваши разработки. <a href="/admin/products/new">Добавить первую →</a><% } %>
+  </div>
+  <% } %>
+</section>
+<%- include('partials/bottom') %>

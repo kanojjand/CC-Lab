@@ -1,0 +1,186 @@
+<%
+  const v = values || {};
+  const e = errors || {};
+  const isNew = !product;
+  const action = isNew ? '/admin/products' : `/admin/products/${product.id}`;
+  const err = (k) => e[k] ? `<p class="field-error">${e[k]}</p>` : '';
+  const tagsValue = Array.isArray(v.tagList) ? v.tagList.join(', ') : String(v.tags || '').split(',').filter(Boolean).join(', ');
+  const priceValue = v.price === null || v.price === undefined ? '' : v.price;
+%>
+<%- include('partials/top', { title: isNew ? 'Новая разработка' : product.title }) %>
+<div class="page-top">
+  <div>
+    <p class="mono dim back-link"><a class="linkish" href="/admin/products">← Все разработки</a></p>
+    <h1><%= isNew ? 'Новая разработка' : product.title %></h1>
+    <% if (!isNew) { %><p><span class="mono"><%= product.code %></span> · <span class="pill <%= product.status %>"><%= product.status === 'published' ? 'Опубликовано' : 'Черновик' %></span></p><% } %>
+  </div>
+  <% if (!isNew) { %>
+  <div class="page-actions">
+    <a class="btn btn-ghost" href="/catalog/<%= product.slug %>" target="_blank" rel="noopener"><%= product.status === 'published' ? 'Открыть на сайте ↗' : 'Предпросмотр ↗' %></a>
+  </div>
+  <% } %>
+</div>
+
+<% if (Object.keys(e).length) { %><div class="alert" role="alert">Проверьте форму: <%= Object.values(e).join(' ') %></div><% } %>
+
+<form class="form-layout product-form" method="post" action="<%= action %>?_csrf=<%= encodeURIComponent(csrf) %>" enctype="multipart/form-data" data-dirty-check>
+  <div class="form-main">
+    <section class="panel">
+      <div class="panel-head"><h2>Основное</h2></div>
+      <div class="panel-body">
+        <div class="field<%= e.title ? ' has-error' : '' %>">
+          <label for="title">Название *</label>
+          <input id="title" type="text" name="title" value="<%= v.title || '' %>" maxlength="200" required placeholder="Например, «Робототехника для 5–7 классов»">
+          <%- err('title') %>
+        </div>
+        <div class="field">
+          <label for="tagline">Короткое описание</label>
+          <textarea id="tagline" name="tagline" maxlength="300" rows="2" data-count="tagline-count" placeholder="Одно-два предложения для карточки в каталоге"><%= v.tagline || '' %></textarea>
+          <span class="hint">Показывается в карточке и под заголовком. <span id="tagline-count"></span></span>
+        </div>
+        <div class="field">
+          <label for="description">Подробное описание</label>
+          <textarea id="description" class="tall" name="description" maxlength="20000"><%= v.description || '' %></textarea>
+          <span class="hint">Поддерживается Markdown: <code>**жирный**</code>, <code>*курсив*</code>, <code>## Подзаголовок</code>, списки через <code>- </code>, ссылки <code>[текст](https://…)</code>.</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head"><h2>Состав</h2></div>
+      <div class="panel-body">
+        <div class="field">
+          <label for="features">Что входит</label>
+          <textarea id="features" name="features" rows="6" placeholder="68 поурочных планов&#10;Презентации к каждому уроку&#10;Обучение педагога"><%= v.features || '' %></textarea>
+          <span class="hint">По одному пункту на строку.</span>
+        </div>
+        <div class="field">
+          <label for="modules">Программа / этапы</label>
+          <textarea id="modules" name="modules" rows="6" placeholder="Механика — передачи, рычаги, первые модели&#10;Датчики — роботы, которые «видят»"><%= v.modules || '' %></textarea>
+          <span class="hint">По строке на модуль в формате <code>Название — описание</code>. Описание можно не писать.</span>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="form-side">
+    <section class="panel">
+      <div class="panel-head"><h2>Публикация</h2></div>
+      <div class="panel-body">
+        <div class="field">
+          <label for="status">Статус</label>
+          <select id="status" name="status">
+            <option value="draft"<%= v.status !== 'published' ? ' selected' : '' %>>Черновик — не видно на сайте</option>
+            <option value="published"<%= v.status === 'published' ? ' selected' : '' %>>Опубликовано — в каталоге</option>
+          </select>
+        </div>
+        <div class="field">
+          <label class="check"><input type="checkbox" name="featured" value="1"<%= v.featured && v.featured !== '0' ? ' checked' : '' %>><span>Хит — показывать на главной и выше в каталоге</span></label>
+        </div>
+        <div class="field">
+          <label for="sort_order">Порядок</label>
+          <input id="sort_order" type="number" name="sort_order" value="<%= v.sort_order ?? 0 %>" step="1">
+          <span class="hint">Меньше число — выше в списке «Рекомендуемые».</span>
+        </div>
+        <div class="savebar sticky-mobile">
+          <button class="btn btn-block" type="submit"><%= isNew ? 'Создать' : 'Сохранить' %></button>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head"><h2>Категория и цена</h2></div>
+      <div class="panel-body">
+        <div class="field<%= e.category_id ? ' has-error' : '' %>">
+          <label for="category_id">Категория</label>
+          <select id="category_id" name="category_id">
+            <option value="">— без категории —</option>
+            <% categories.forEach((c) => { %><option value="<%= c.id %>"<%= Number(v.category_id) === c.id ? ' selected' : '' %>><%= c.name %></option><% }) %>
+          </select>
+          <%- err('category_id') %>
+          <span class="hint"><a class="linkish" href="/admin/categories">Управлять категориями</a></span>
+        </div>
+        <div class="row">
+          <div class="field">
+            <label for="price">Цена, <%= settings.currency %></label>
+            <input id="price" type="text" name="price" value="<%= priceValue %>" inputmode="numeric" placeholder="по запросу">
+          </div>
+          <div class="field">
+            <label for="price_note">Уточнение</label>
+            <input id="price_note" type="text" name="price_note" value="<%= v.price_note || '' %>" maxlength="120" placeholder="за школу / год">
+          </div>
+        </div>
+        <span class="hint">Пустая цена — на сайте будет «По запросу».</span>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head"><h2>Детали</h2></div>
+      <div class="panel-body">
+        <div class="field"><label for="audience">Для кого</label><input id="audience" type="text" name="audience" value="<%= v.audience || '' %>" maxlength="120" placeholder="5–9 класс"></div>
+        <div class="field"><label for="duration">Длительность / объём</label><input id="duration" type="text" name="duration" value="<%= v.duration || '' %>" maxlength="120" placeholder="34 урока · 1 год"></div>
+        <div class="field"><label for="format">Формат</label><input id="format" type="text" name="format" value="<%= v.format || '' %>" maxlength="120" placeholder="Очно / онлайн / под ключ"></div>
+        <div class="field"><label for="tags">Теги</label><input id="tags" type="text" name="tags" value="<%= tagsValue %>" placeholder="python, программирование"><span class="hint">Через запятую. По тегам можно фильтровать каталог.</span></div>
+        <div class="field<%= e.demo_url ? ' has-error' : '' %>"><label for="demo_url">Ссылка на демо</label><input id="demo_url" type="url" name="demo_url" value="<%= v.demo_url || '' %>" placeholder="https://demo.cclab.kz"><%- err('demo_url') %></div>
+        <div class="field">
+          <label for="slug">Адрес страницы</label>
+          <div class="slug-prefix"><span>/catalog/</span><input id="slug" type="text" name="slug" value="<%= v.slug || '' %>" maxlength="100" placeholder="создастся из названия"></div>
+          <span class="hint">Латиница, цифры и дефисы. Оставьте пустым — сгенерируем из названия.</span>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <section class="panel form-media">
+    <div class="panel-head"><h2>Картинки</h2></div>
+    <div class="panel-body">
+      <% if (e.files) { %><div class="alert"><%= e.files %></div><% } %>
+      <div class="row">
+        <div class="field">
+          <span class="field-label">Обложка</span>
+          <div class="cover-preview" id="cover-preview">
+            <% if (product && product.cover) { %><img src="/uploads/<%= product.cover %>" alt=""><% } else { %><%- coverArt(product ? product.id : 1) %><% } %>
+          </div>
+          <input type="file" name="cover" accept="image/jpeg,image/png,image/webp,image/gif,image/avif" data-preview="#cover-preview" aria-label="Загрузить обложку">
+          <% if (product && product.cover) { %><label class="check mt"><input type="checkbox" name="remove_cover" value="1"><span>Убрать обложку (будет сгенерирована автоматически)</span></label><% } %>
+          <span class="hint">16:10, от 1280×800. Без обложки покажем фирменную генеративную картинку.</span>
+        </div>
+        <div class="field">
+          <span class="field-label">Галерея (скриншоты, фото с уроков)</span>
+          <% if (product && product.galleryList.length) { %>
+          <div class="gallery-edit">
+            <% product.galleryList.forEach((img) => { %>
+            <label><input class="visually-hidden" type="checkbox" name="remove_gallery" value="<%= img %>"><img src="/uploads/<%= img %>" alt=""><span>✕ удалить</span></label>
+            <% }) %>
+          </div>
+          <span class="hint">Нажмите на картинку, чтобы отметить её на удаление.</span>
+          <% } %>
+          <input type="file" name="gallery" multiple accept="image/jpeg,image/png,image/webp,image/gif,image/avif" aria-label="Добавить картинки в галерею">
+          <span class="hint">До <%= maxGallery %> картинок. Большие фото автоматически уменьшаются до 1920 px перед загрузкой.</span>
+        </div>
+      </div>
+    </div>
+  </section>
+</form>
+
+<% if (!isNew) { %>
+<section class="panel mt">
+  <div class="panel-head"><h2>Действия</h2></div>
+  <div class="panel-body danger-zone">
+    <form class="inline-form" method="post" action="/admin/products/<%= product.id %>/status">
+      <input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="back" value="edit">
+      <input type="hidden" name="status" value="<%= product.status === 'published' ? 'draft' : 'published' %>">
+      <button class="btn btn-ghost" type="submit"><%= product.status === 'published' ? 'Снять с публикации' : 'Опубликовать сейчас' %></button>
+    </form>
+    <form class="inline-form" method="post" action="/admin/products/<%= product.id %>/duplicate">
+      <input type="hidden" name="_csrf" value="<%= csrf %>">
+      <button class="btn btn-ghost" type="submit">Сделать копию</button>
+    </form>
+    <form class="inline-form" method="post" action="/admin/products/<%= product.id %>/delete" data-confirm="Удалить «<%= product.title %>» навсегда? Заявки по ней сохранятся.">
+      <input type="hidden" name="_csrf" value="<%= csrf %>">
+      <button class="btn btn-danger" type="submit">Удалить</button>
+    </form>
+  </div>
+</section>
+<% } %>
+<%- include('partials/bottom') %>

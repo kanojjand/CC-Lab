@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Вход · <%= settings.site_name %></title>
+<link rel="icon" href="/brand/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500&family=Manrope:wght@400;500;600;700&family=Unbounded:wght@600&display=swap">
+<link rel="stylesheet" href="<%= asset('/css/admin.css') %>">
+</head>
+<body>
+<main class="auth">
+  <form class="auth-card" method="post" action="/admin/login">
+    <%- include('../partials/mark') %>
+    <h1><%= settings.site_name %></h1>
+    <p class="sub">Вход в админку</p>
+    <% if (error) { %><div class="alert" role="alert"><%= error %></div><% } %>
+    <input type="hidden" name="next" value="<%= next %>">
+    <div class="field">
+      <label for="email">E-mail</label>
+      <input id="email" type="email" name="email" value="<%= email %>" autocomplete="username" required autofocus>
+    </div>
+    <div class="field">
+      <label for="password">Пароль</label>
+      <input id="password" type="password" name="password" autocomplete="current-password" required>
+    </div>
+    <button class="btn" type="submit">Войти</button>
+    <a class="auth-back" href="/">← Вернуться на сайт</a>
+  </form>
+</main>
+</body>
+</html>

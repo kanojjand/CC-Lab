@@ -1,0 +1,14 @@
+<%- include('partials/top', { title: 'Заявка отправлена', noindex: true }) %>
+<section class="center-page">
+  <div class="wrap">
+    <div class="big-star" aria-hidden="true"></div>
+    <span class="eyebrow">Заявка принята</span>
+    <h1 class="h-gap">Спасибо! Мы скоро свяжемся</h1>
+    <p><% if (product) { %>Заявка на «<%= product.title %>» уже у нас. <% } %>Обычно отвечаем в течение рабочего дня. А пока — загляните в каталог, там есть ещё много интересного.</p>
+    <div class="hero-actions">
+      <a class="btn" href="/catalog">В каталог <span class="arrow">→</span></a>
+      <a class="btn btn-ghost" href="/">На главную</a>
+    </div>
+  </div>
+</section>
+<%- include('partials/bottom') %>

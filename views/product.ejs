@@ -1,0 +1,120 @@
+<%
+  const p = product;
+  const feats = lines(p.features);
+  const mods = modules(p.modules);
+  const facts = [['Для кого', p.audience], ['Длительность', p.duration], ['Формат', p.format], ['Код', p.code]].filter(([, v]) => v);
+%>
+<%- include('partials/top', {
+  title: p.title,
+  description: p.tagline || truncate(p.description, 180),
+  image: p.cover ? `/uploads/${p.cover}` : '',
+  nav: 'catalog',
+  canonical: `/catalog/${p.slug}`,
+  noindex: p.status !== 'published',
+  editUrl: `/admin/products/${p.id}/edit`,
+}) %>
+
+<div class="wrap">
+  <nav class="crumbs" aria-label="Навигация">
+    <a href="/catalog">Каталог</a><span>/</span>
+    <% if (p.category_slug) { %><a href="/catalog?category=<%= p.category_slug %>"><%= p.category_name %></a><span>/</span><% } %>
+    <span><%= p.code %></span>
+  </nav>
+  <% if (p.status !== 'published') { %>
+  <div class="draft-banner">Это черновик — его видят только администраторы. <a href="/admin/products/<%= p.id %>/edit">Открыть в админке</a></div>
+  <% } %>
+
+  <section class="product-hero">
+    <div>
+      <div class="product-tags">
+        <% if (p.category_name) { %><a class="tag tag-solid" href="/catalog?category=<%= p.category_slug %>"><%= p.category_name %></a><% } %>
+        <% p.tagList.forEach((t) => { %><a class="tag" href="/catalog?tag=<%= encodeURIComponent(t) %>">#<%= t %></a><% }) %>
+      </div>
+      <h1><%= p.title %></h1>
+      <% if (p.tagline) { %><p class="product-tagline"><%= p.tagline %></p><% } %>
+      <div class="hero-actions">
+        <a class="btn" href="#request">Оставить заявку <span class="arrow">→</span></a>
+        <% if (p.demo_url) { %><a class="btn btn-ghost" href="<%= p.demo_url %>" target="_blank" rel="noopener">Смотреть демо ↗</a><% } %>
+      </div>
+    </div>
+    <div class="product-media">
+      <% if (p.cover) { %><img src="/uploads/<%= p.cover %>" alt="<%= p.title %>"><% } else { %><%- coverArt(p.id) %><% } %>
+    </div>
+  </section>
+
+  <div class="product-layout">
+    <div>
+      <% if (p.description) { %>
+      <section class="block">
+        <h2>О разработке</h2>
+        <div class="prose"><%- md(p.description) %></div>
+      </section>
+      <% } %>
+      <% if (feats.length) { %>
+      <section class="block">
+        <h2>Что входит</h2>
+        <ul class="features"><% feats.forEach((f) => { %><li><%= f %></li><% }) %></ul>
+      </section>
+      <% } %>
+      <% if (mods.length) { %>
+      <section class="block">
+        <h2>Программа</h2>
+        <ol class="modules">
+          <% mods.forEach((m, i) => { %>
+          <li><span class="idx"><%= String(i + 1).padStart(2, '0') %></span><div><strong><%= m.title %></strong><% if (m.text) { %><span><%= m.text %></span><% } %></div></li>
+          <% }) %>
+        </ol>
+      </section>
+      <% } %>
+      <% if (p.galleryList.length) { %>
+      <section class="block">
+        <h2>Как это выглядит</h2>
+        <div class="gallery">
+          <% p.galleryList.forEach((img) => { %><a href="/uploads/<%= img %>" target="_blank" rel="noopener"><img src="/uploads/<%= img %>" alt="" loading="lazy"></a><% }) %>
+        </div>
+      </section>
+      <% } %>
+    </div>
+
+    <aside class="order-card" aria-label="Стоимость и заказ">
+      <span class="eyebrow">Стоимость</span>
+      <div class="price h-gap"><%= fmtPrice(p.price) %></div>
+      <% if (p.price_note) { %><span class="price-note"><%= p.price_note %></span><% } %>
+      <a class="btn btn-block" href="#request">Оставить заявку <span class="arrow">→</span></a>
+      <% if (p.demo_url) { %><a class="btn btn-ghost btn-block" href="<%= p.demo_url %>" target="_blank" rel="noopener">Смотреть демо ↗</a><% } %>
+      <% if (facts.length) { %>
+      <dl class="facts">
+        <% facts.forEach(([k, v]) => { %><div><dt><%= k %></dt><dd><%= v %></dd></div><% }) %>
+      </dl>
+      <% } %>
+    </aside>
+  </div>
+</div>
+
+<section class="section" id="request">
+  <div class="wrap contact-grid">
+    <div>
+      <span class="eyebrow">Заявка</span>
+      <h2 class="h-gap">Хотите внедрить «<%= p.title %>»?</h2>
+      <p class="muted lead-gap">Оставьте контакты — расскажем подробнее, покажем демо и подготовим предложение для вашей школы.</p>
+      <%- include('partials/contacts') %>
+    </div>
+    <div>
+      <%- include('partials/lead-form', { product: p, values, errors, anchor: 'request' }) %>
+    </div>
+  </div>
+</section>
+
+<% if (related.length) { %>
+<section class="section">
+  <div class="wrap">
+    <div class="section-head">
+      <div><span class="eyebrow">Ещё в каталоге</span><h2>Похожие разработки</h2></div>
+      <a class="link-arrow" href="/catalog">Весь каталог →</a>
+    </div>
+    <div class="grid"><% related.forEach((r) => { %><%- include('partials/card', { p: r }) %><% }) %></div>
+  </div>
+</section>
+<% } %>
+
+<%- include('partials/bottom') %>

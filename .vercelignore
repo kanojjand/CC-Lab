@@ -1,0 +1,7 @@
+data
+test
+Dockerfile
+docker-compose.yml
+.env
+.env*
+.vercel

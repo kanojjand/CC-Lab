@@ -1,0 +1,29 @@
+<%- include('partials/top', { title: 'Настройки' }) %>
+<div class="page-top">
+  <div><h1>Настройки сайта</h1><p>Тексты на главной, контакты и общие параметры.</p></div>
+</div>
+<% if (Object.keys(errors).length) { %><div class="alert" role="alert"><%= Object.values(errors).join(' ') %></div><% } %>
+<form method="post" action="/admin/settings" class="settings-form">
+  <input type="hidden" name="_csrf" value="<%= csrf %>">
+  <% const groups = [['Бренд и главная', ['site_name', 'site_full_name', 'hero_title', 'hero_subtitle', 'about_text', 'meta_description']], ['Контакты', ['contact_phone', 'contact_email', 'contact_telegram', 'contact_address']], ['Прочее', ['currency', 'timezone']]]; %>
+  <% groups.forEach(([groupTitle, keys]) => { %>
+  <section class="panel">
+    <div class="panel-head"><h2><%= groupTitle %></h2></div>
+    <div class="panel-body">
+      <% keys.map((k) => fields.find((f) => f.key === k)).forEach((f) => { %>
+      <div class="field<%= errors[f.key] ? ' has-error' : '' %>">
+        <label for="s-<%= f.key %>"><%= f.label %></label>
+        <% if (f.textarea) { %>
+        <textarea id="s-<%= f.key %>" name="<%= f.key %>" maxlength="<%= f.max %>"<% if (f.tall) { %> class="tall"<% } %>><%= values[f.key] %></textarea>
+        <% } else { %>
+        <input id="s-<%= f.key %>" type="text" name="<%= f.key %>" value="<%= values[f.key] %>" maxlength="<%= f.max %>">
+        <% } %>
+        <% if (errors[f.key]) { %><p class="field-error"><%= errors[f.key] %></p><% } %>
+      </div>
+      <% }) %>
+    </div>
+  </section>
+  <% }) %>
+  <div class="savebar sticky-mobile mt"><button class="btn" type="submit">Сохранить настройки</button></div>
+</form>
+<%- include('partials/bottom') %>

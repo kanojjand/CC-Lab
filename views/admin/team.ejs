@@ -1,0 +1,56 @@
+<%- include('partials/top', { title: 'Команда' }) %>
+<div class="page-top">
+  <div><h1>Команда</h1><p>Кто может входить в админку. У всех одинаковые права.</p></div>
+</div>
+<% if (errors.team) { %><div class="alert" role="alert"><%= errors.team %></div><% } %>
+
+<div class="two-col">
+  <section class="panel">
+    <div class="panel-head"><h2>Администраторы</h2></div>
+    <div class="table-wrap"><table class="table responsive">
+      <thead><tr><th>E-mail</th><th>Имя</th><th>Добавлен</th><th></th></tr></thead>
+      <tbody>
+      <% users.forEach((u) => { %>
+        <tr>
+          <td data-label="E-mail"><b><%= u.email %></b><% if (u.id === user.id) { %> <span class="pill">это вы</span><% } %></td>
+          <td data-label="Имя"><%= u.name || '—' %></td>
+          <td data-label="Добавлен" class="dim"><%= fmtDate(u.created_at) %></td>
+          <td class="actions">
+            <% if (u.id !== user.id) { %>
+            <form class="inline-form" method="post" action="/admin/team/<%= u.id %>/delete" data-confirm="Удалить доступ для <%= u.email %>?">
+              <input type="hidden" name="_csrf" value="<%= csrf %>">
+              <button class="btn btn-danger btn-sm" type="submit">Удалить</button>
+            </form>
+            <% } %>
+          </td>
+        </tr>
+      <% }) %>
+      </tbody>
+    </table></div>
+  </section>
+
+  <div>
+    <section class="panel">
+      <div class="panel-head"><h2>Добавить человека</h2></div>
+      <form class="panel-body" method="post" action="/admin/team" autocomplete="off">
+        <input type="hidden" name="_csrf" value="<%= csrf %>">
+        <div class="field<%= errors.email ? ' has-error' : '' %>"><label for="t-email">E-mail *</label><input id="t-email" type="email" name="email" value="<%= values.email || '' %>" required><% if (errors.email) { %><p class="field-error"><%= errors.email %></p><% } %></div>
+        <div class="field"><label for="t-name">Имя</label><input id="t-name" type="text" name="name" value="<%= values.name || '' %>" maxlength="80"></div>
+        <div class="field<%= errors.password ? ' has-error' : '' %>"><label for="t-pass">Пароль *</label><input id="t-pass" type="password" name="password" autocomplete="new-password" minlength="8" required><% if (errors.password) { %><p class="field-error"><%= errors.password %></p><% } %><span class="hint">Минимум 8 символов. Передайте пароль человеку лично.</span></div>
+        <button class="btn" type="submit">Добавить</button>
+      </form>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head"><h2>Сменить мой пароль</h2></div>
+      <form class="panel-body" method="post" action="/admin/team/password">
+        <input type="hidden" name="_csrf" value="<%= csrf %>">
+        <div class="field<%= errors.current_password ? ' has-error' : '' %>"><label for="p-cur">Текущий пароль</label><input id="p-cur" type="password" name="current_password" autocomplete="current-password" required><% if (errors.current_password) { %><p class="field-error"><%= errors.current_password %></p><% } %></div>
+        <div class="field<%= errors.new_password ? ' has-error' : '' %>"><label for="p-new">Новый пароль</label><input id="p-new" type="password" name="new_password" autocomplete="new-password" minlength="8" required><% if (errors.new_password) { %><p class="field-error"><%= errors.new_password %></p><% } %></div>
+        <div class="field<%= errors.confirm_password ? ' has-error' : '' %>"><label for="p-conf">Повторите новый пароль</label><input id="p-conf" type="password" name="confirm_password" autocomplete="new-password" minlength="8" required><% if (errors.confirm_password) { %><p class="field-error"><%= errors.confirm_password %></p><% } %></div>
+        <button class="btn" type="submit">Сменить пароль</button>
+      </form>
+    </section>
+  </div>
+</div>
+<%- include('partials/bottom') %>

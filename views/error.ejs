@@ -1,0 +1,13 @@
+<%- include('partials/top', { title, noindex: true }) %>
+<section class="center-page">
+  <div class="wrap">
+    <% if (locals.code) { %><div class="code" aria-hidden="true"><%= code %></div><% } else { %><div class="big-star" aria-hidden="true"></div><% } %>
+    <h1><%= title %></h1>
+    <p><%= message %></p>
+    <div class="hero-actions">
+      <a class="btn" href="/catalog">В каталог <span class="arrow">→</span></a>
+      <a class="btn btn-ghost" href="/">На главную</a>
+    </div>
+  </div>
+</section>
+<%- include('partials/bottom') %>

@@ -1,0 +1,15 @@
+<%- include('partials/top', { title: 'Оставить заявку', description: 'Расскажите о задаче — подготовим предложение для вашей школы.', canonical: '/request' }) %>
+<section class="section">
+  <div class="wrap contact-grid">
+    <div>
+      <span class="eyebrow">Заявка</span>
+      <h1 class="h-gap page-title">Расскажите о задаче</h1>
+      <p class="muted lead-gap">Ответим в течение рабочего дня: уточним детали, покажем демо и подготовим предложение с составом, сроками и стоимостью.</p>
+      <%- include('partials/contacts') %>
+    </div>
+    <div id="request-form">
+      <%- include('partials/lead-form', { product, values, errors, anchor: 'request-form' }) %>
+    </div>
+  </div>
+</section>
+<%- include('partials/bottom') %>

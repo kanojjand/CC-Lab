@@ -1,0 +1,24 @@
+{
+  "name": "cc-lab",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "CC Lab (Code Collective Laboratory) — каталог EdTech-разработок с админ-панелью",
+  "main": "server.js",
+  "scripts": {
+    "start": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning server.js",
+    "dev": "node --env-file-if-exists=.env --watch --disable-warning=ExperimentalWarning server.js",
+    "test": "node --disable-warning=ExperimentalWarning --test test/*.test.js"
+  },
+  "engines": {
+    "node": ">=22.13"
+  },
+  "dependencies": {
+    "@electric-sql/pglite": "^0.5.9",
+    "ejs": "^7.0.1",
+    "express": "^5.3.0",
+    "marked": "^18.1.0",
+    "multer": "^2.4.0",
+    "pg": "^8.23.1"
+  }
+}

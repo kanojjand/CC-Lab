@@ -1,0 +1,51 @@
+<%- include('partials/top', { title: 'Заявки' }) %>
+<div class="page-top">
+  <div><h1>Заявки</h1><p>Всё, что пришло через формы на сайте.</p></div>
+  <div class="page-actions"><a class="btn btn-ghost" href="/admin/leads.csv">Скачать CSV</a></div>
+</div>
+
+<nav class="tabs" aria-label="Фильтр по статусу">
+  <a href="/admin/leads" aria-current="<%= !status %>">Все<span class="n"><%= stats.total %></span></a>
+  <% for (const [key, label] of Object.entries(leadStatuses)) { %>
+  <a href="/admin/leads?status=<%= key %>" aria-current="<%= status === key %>"><%= label %><span class="n"><%= stats[key] %></span></a>
+  <% } %>
+</nav>
+
+<section class="panel">
+  <% if (leads.length) { %>
+  <% leads.forEach((l) => { %>
+  <article class="lead" id="lead-<%= l.id %>">
+    <div>
+      <div class="lead-head">
+        <span class="pill <%= l.status %>"><%= leadStatuses[l.status] %></span>
+        <b><%= l.name %></b>
+        <span class="dim mono">#<%= l.id %> · <%= fmtDate(l.created_at) %></span>
+      </div>
+      <div class="lead-meta">
+        <span>Контакт: <b><%= l.contact %></b></span>
+        <% if (l.organization) { %><span>Организация: <%= l.organization %></span><% } %>
+        <% if (l.product_title) { %><span>Разработка: <% if (l.product_slug) { %><a href="/catalog/<%= l.product_slug %>" target="_blank" rel="noopener"><%= l.product_title %></a><% } else { %><%= l.product_title %><% } %></span><% } %>
+      </div>
+      <% if (l.message) { %><p class="lead-msg"><%= l.message %></p><% } %>
+    </div>
+    <form class="lead-side" method="post" action="/admin/leads/<%= l.id %>">
+      <input type="hidden" name="_csrf" value="<%= csrf %>">
+      <input type="hidden" name="filter" value="<%= status %>">
+      <label class="visually-hidden" for="ls-<%= l.id %>">Статус</label>
+      <select id="ls-<%= l.id %>" name="status" data-autosubmit>
+        <% for (const [key, label] of Object.entries(leadStatuses)) { %><option value="<%= key %>"<%= l.status === key ? ' selected' : '' %>><%= label %></option><% } %>
+      </select>
+      <label class="visually-hidden" for="ln-<%= l.id %>">Заметка</label>
+      <textarea id="ln-<%= l.id %>" name="note" placeholder="Заметка для команды: созвонились, отправили КП…" maxlength="2000"><%= l.note %></textarea>
+      <span class="savebar">
+        <button class="btn btn-ghost btn-sm" type="submit">Сохранить</button>
+        <button class="btn btn-danger btn-sm" type="submit" formaction="/admin/leads/<%= l.id %>/delete" data-confirm-click="Удалить заявку от «<%= l.name %>»?">Удалить</button>
+      </span>
+    </form>
+  </article>
+  <% }) %>
+  <% } else { %>
+  <div class="empty-state"><%- include('../partials/mark') %><%= status ? 'Заявок с таким статусом нет.' : 'Заявок пока нет. Они появятся здесь, как только кто-то заполнит форму на сайте.' %></div>
+  <% } %>
+</section>
+<%- include('partials/bottom') %>

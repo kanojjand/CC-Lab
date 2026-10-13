@@ -1,0 +1,20 @@
+<article class="card">
+  <a class="card-link" href="/catalog/<%= p.slug %>">
+    <div class="card-media">
+      <% if (p.cover) { %><img src="/uploads/<%= p.cover %>" alt="" loading="lazy"><% } else { %><%- coverArt(p.id) %><% } %>
+      <% if (p.featured && locals.showBadge !== false) { %><span class="card-badge">Хит</span><% } %>
+    </div>
+    <div class="card-body">
+      <div class="card-meta"><span><%= p.code %></span><span><%= p.category_name || 'Разработка' %></span></div>
+      <h3><%= p.title %></h3>
+      <% if (p.tagline) { %><p class="card-tagline"><%= truncate(p.tagline, 150) %></p><% } %>
+      <% const facts = [p.audience, p.duration].filter(Boolean); if (facts.length) { %>
+      <ul class="card-facts"><% facts.forEach((f) => { %><li><%= f %></li><% }) %></ul>
+      <% } %>
+      <div class="card-foot">
+        <div><span class="price"><%= fmtPrice(p.price) %></span><% if (p.price_note) { %><span class="price-note"><%= p.price_note %></span><% } %></div>
+        <span class="card-go" aria-hidden="true">→</span>
+      </div>
+    </div>
+  </a>
+</article>

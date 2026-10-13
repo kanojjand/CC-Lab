@@ -1,0 +1,37 @@
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <%- include('mark') %>
+        <p><strong><%= settings.site_name %></strong> · <%= settings.site_full_name %>. Курсы, сайты для школ и образовательные программы — от идеи до внедрения в классе.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Навигация</h4>
+        <ul>
+          <li><a href="/catalog">Каталог</a></li>
+          <li><a href="/#schools">Как мы работаем</a></li>
+          <li><a href="/#about">О лаборатории</a></li>
+          <li><a href="/request">Оставить заявку</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Контакты</h4>
+        <ul>
+          <% if (settings.contact_email) { %><li><a href="mailto:<%= settings.contact_email %>"><%= settings.contact_email %></a></li><% } %>
+          <% if (settings.contact_phone) { %><li><a href="tel:<%= settings.contact_phone.replace(/[^\d+]/g, '') %>"><%= settings.contact_phone %></a></li><% } %>
+          <% if (telegram) { %><li><a href="<%= telegram.url %>" target="_blank" rel="noopener"><%= telegram.label %></a></li><% } %>
+          <% if (settings.contact_address) { %><li><span class="muted"><%= settings.contact_address %></span></li><% } %>
+          <% if (!settings.contact_email && !settings.contact_phone && !telegram) { %><li><a href="/request">Написать нам</a></li><% } %>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-word" aria-hidden="true">CC LAB</div>
+    <div class="footer-bottom">
+      <span>© <%= new Date().getFullYear() %> <%= settings.site_name %> — <%= settings.site_full_name %></span>
+      <span>EdTech · made by Code Collective</span>
+    </div>
+  </div>
+</footer>
+</body>
+</html>

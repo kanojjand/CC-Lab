@@ -1,0 +1,53 @@
+<%
+  const pageTitle = locals.title ? `${title} — ${settings.site_name}` : `${settings.site_name} — ${settings.site_full_name}`;
+  const pageDescription = locals.description || settings.meta_description;
+  const pageImage = locals.image ? (image.startsWith('http') ? image : siteUrl + image) : `${siteUrl}/brand/og.png`;
+  const nav = locals.nav || '';
+%><!doctype html>
+<html lang="ru" class="no-js">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title><%= pageTitle %></title>
+<meta name="description" content="<%= pageDescription %>">
+<% if (locals.noindex) { %><meta name="robots" content="noindex"><% } %>
+<% if (locals.canonical) { %><link rel="canonical" href="<%= siteUrl + canonical %>"><% } %>
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="<%= settings.site_name %>">
+<meta property="og:title" content="<%= pageTitle %>">
+<meta property="og:description" content="<%= pageDescription %>">
+<meta property="og:image" content="<%= pageImage %>">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#050505">
+<link rel="icon" href="/brand/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/brand/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Manrope:wght@400;500;600;700&family=Unbounded:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="<%= asset('/css/site.css') %>">
+<script src="<%= asset('/js/site.js') %>" defer></script>
+</head>
+<body>
+<% if (locals.user) { %>
+<div class="admin-strip"><div class="wrap">
+  <span>Вы вошли как <%= user.name || user.email %></span>
+  <span><% if (locals.editUrl) { %><a href="<%= editUrl %>">Редактировать эту страницу</a> · <% } %><a href="/admin">Админка →</a></span>
+</div></div>
+<% } %>
+<header class="site-header">
+  <div class="wrap header-inner">
+    <a class="brand" href="/" aria-label="<%= settings.site_name %> — на главную">
+      <%- include('mark') %>
+      <span class="brand-name"><%= settings.site_name %><small><%= settings.site_full_name %></small></span>
+    </a>
+    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav"><span></span><span class="visually-hidden">Меню</span></button>
+    <nav id="site-nav" class="site-nav" aria-label="Основное меню">
+      <a href="/catalog"<% if (nav === 'catalog') { %> aria-current="page"<% } %>>Каталог</a>
+      <a href="/#schools">Школам</a>
+      <a href="/#about">О лаборатории</a>
+      <a href="/#contacts">Контакты</a>
+      <a class="btn btn-sm" href="/request">Оставить заявку</a>
+    </nav>
+  </div>
+</header>
+<main id="main">
