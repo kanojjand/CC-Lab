@@ -61,6 +61,33 @@
         </div>
       </div>
     </section>
+
+    <section class="panel">
+      <div class="panel-head"><h2>Переводы</h2></div>
+      <div class="panel-body">
+        <p class="hint i18n-intro">Казахская и английская версии страницы. Пустое поле — на сайте покажем русский текст. Цена и картинки общие для всех языков, теги показываются только на русской версии.</p>
+        <% extraLangs.forEach((lang) => { const tr = (v.i18n && v.i18n[lang]) || {}; const filled = Object.keys(tr).length; const id = (f) => `i18n-${lang}-${f}`; const nm = (f) => `i18n_${lang}_${f}`; %>
+        <details class="i18n-block"<%= filled ? ' open' : '' %>>
+          <summary><span class="lang-badge"><%= langMeta[lang].short %></span><b><%= langMeta[lang].name %></b><span class="dim"><%= filled ? `заполнено полей: ${filled} из 9` : 'не заполнено' %></span></summary>
+          <div class="i18n-fields">
+            <div class="field"><label for="<%= id('title') %>">Название</label><input id="<%= id('title') %>" type="text" name="<%= nm('title') %>" value="<%= tr.title || '' %>" maxlength="200" placeholder="<%= v.title || '' %>"></div>
+            <div class="field"><label for="<%= id('tagline') %>">Короткое описание</label><textarea id="<%= id('tagline') %>" name="<%= nm('tagline') %>" rows="2" maxlength="300" placeholder="<%= v.tagline || '' %>"><%= tr.tagline || '' %></textarea></div>
+            <div class="field"><label for="<%= id('description') %>">Подробное описание (Markdown)</label><textarea id="<%= id('description') %>" class="tall" name="<%= nm('description') %>" maxlength="20000"><%= tr.description || '' %></textarea></div>
+            <div class="field"><label for="<%= id('features') %>">Что входит</label><textarea id="<%= id('features') %>" name="<%= nm('features') %>" rows="5" placeholder="<%= v.features || '' %>"><%= tr.features || '' %></textarea><span class="hint">По одному пункту на строку.</span></div>
+            <div class="field"><label for="<%= id('modules') %>">Программа / этапы</label><textarea id="<%= id('modules') %>" name="<%= nm('modules') %>" rows="5" placeholder="<%= v.modules || '' %>"><%= tr.modules || '' %></textarea><span class="hint">По строке на модуль: <code>Название — описание</code>.</span></div>
+            <div class="row">
+              <div class="field"><label for="<%= id('audience') %>">Для кого</label><input id="<%= id('audience') %>" type="text" name="<%= nm('audience') %>" value="<%= tr.audience || '' %>" maxlength="120" placeholder="<%= v.audience || '' %>"></div>
+              <div class="field"><label for="<%= id('duration') %>">Длительность / объём</label><input id="<%= id('duration') %>" type="text" name="<%= nm('duration') %>" value="<%= tr.duration || '' %>" maxlength="120" placeholder="<%= v.duration || '' %>"></div>
+            </div>
+            <div class="row">
+              <div class="field"><label for="<%= id('format') %>">Формат</label><input id="<%= id('format') %>" type="text" name="<%= nm('format') %>" value="<%= tr.format || '' %>" maxlength="120" placeholder="<%= v.format || '' %>"></div>
+              <div class="field"><label for="<%= id('price_note') %>">Уточнение к цене</label><input id="<%= id('price_note') %>" type="text" name="<%= nm('price_note') %>" value="<%= tr.price_note || '' %>" maxlength="120" placeholder="<%= v.price_note || '' %>"></div>
+            </div>
+          </div>
+        </details>
+        <% }) %>
+      </div>
+    </section>
   </div>
 
   <div class="form-side">

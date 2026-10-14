@@ -16,6 +16,7 @@
         <div class="field"><label for="cs-<%= c.id %>">Адрес</label><input id="cs-<%= c.id %>" type="text" name="slug" value="<%= c.slug %>" maxlength="80"></div>
       </div>
       <div class="field"><label for="cd-<%= c.id %>">Описание</label><input id="cd-<%= c.id %>" type="text" name="description" value="<%= c.description %>" maxlength="300"></div>
+      <%- include('partials/category-i18n', { idPrefix: `c${c.id}`, tr: i18nOf(c.translations), base: c }) %>
       <div class="cat-row-foot">
         <div class="field cat-order"><label for="co-<%= c.id %>">Порядок</label><input id="co-<%= c.id %>" type="number" name="sort_order" value="<%= c.sort_order %>"></div>
         <span class="dim"><%= c.count %> <%= plural(c.count, 'разработка', 'разработки', 'разработок') %></span>
@@ -38,6 +39,7 @@
       <input type="hidden" name="_csrf" value="<%= csrf %>">
       <div class="field"><label for="new-name">Название *</label><input id="new-name" type="text" name="name" maxlength="80" required placeholder="Например, «Комплекты оборудования»"></div>
       <div class="field"><label for="new-desc">Описание</label><input id="new-desc" type="text" name="description" maxlength="300" placeholder="Одна строка для плитки на главной"></div>
+      <%- include('partials/category-i18n', { idPrefix: 'new', tr: {}, base: {} }) %>
       <div class="row">
         <div class="field"><label for="new-slug">Адрес</label><input id="new-slug" type="text" name="slug" maxlength="80" placeholder="из названия"></div>
         <div class="field"><label for="new-order">Порядок</label><input id="new-order" type="number" name="sort_order" value="<%= (categories.length + 1) * 10 %>"></div>

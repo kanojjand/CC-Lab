@@ -1,8 +1,8 @@
 <% if (settings.contact_email || settings.contact_phone || telegram || settings.contact_address) { %>
 <ul class="contact-list">
-  <% if (settings.contact_phone) { %><li><span>Телефон</span><a href="tel:<%= settings.contact_phone.replace(/[^\d+]/g, '') %>"><%= settings.contact_phone %></a></li><% } %>
-  <% if (settings.contact_email) { %><li><span>E-mail</span><a href="mailto:<%= settings.contact_email %>"><%= settings.contact_email %></a></li><% } %>
-  <% if (telegram) { %><li><span>Telegram</span><a href="<%= telegram.url %>" target="_blank" rel="noopener"><%= telegram.label %></a></li><% } %>
-  <% if (settings.contact_address) { %><li><span>Адрес</span><em class="contact-plain"><%= settings.contact_address %></em></li><% } %>
+  <% if (settings.contact_phone) { %><li><span><%= t('contact.phone') %></span><a href="tel:<%= settings.contact_phone.replace(/[^\d+]/g, '') %>"><%= settings.contact_phone %></a></li><% } %>
+  <% if (settings.contact_email) { %><li><span><%= t('contact.email') %></span><a href="mailto:<%= settings.contact_email %>"><%= settings.contact_email %></a></li><% } %>
+  <% if (telegram) { %><li><span><%= t('contact.telegram') %></span><a href="<%= telegram.url %>" target="_blank" rel="noopener"><%= telegram.label %></a></li><% } %>
+  <% if (settings.contact_address) { %><li><span><%= t('contact.address') %></span><em class="contact-plain"><%= settings.contact_address %></em></li><% } %>
 </ul>
 <% } %>

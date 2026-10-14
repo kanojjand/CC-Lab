@@ -3,22 +3,28 @@
   const pageDescription = locals.description || settings.meta_description;
   const pageImage = locals.image ? (image.startsWith('http') ? image : siteUrl + image) : `${siteUrl}/brand/og.png`;
   const nav = locals.nav || '';
+  const ogLocale = { ru: 'ru_RU', kk: 'kk_KZ', en: 'en_US' }[lang];
 %><!doctype html>
-<html lang="ru" class="no-js">
+<html lang="<%= langMeta[lang].hreflang %>" class="no-js" data-theme="<%= theme %>">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title><%= pageTitle %></title>
 <meta name="description" content="<%= pageDescription %>">
 <% if (locals.noindex) { %><meta name="robots" content="noindex"><% } %>
-<% if (locals.canonical) { %><link rel="canonical" href="<%= siteUrl + canonical %>"><% } %>
+<% if (locals.canonical) { %>
+<link rel="canonical" href="<%= siteUrl + L(canonical) %>">
+<% langs.forEach((l) => { %><link rel="alternate" hreflang="<%= l.hreflang %>" href="<%= siteUrl + Lfor(l.code, canonical) %>">
+<% }) %><link rel="alternate" hreflang="x-default" href="<%= siteUrl + canonical %>">
+<% } %>
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="<%= settings.site_name %>">
+<meta property="og:locale" content="<%= ogLocale %>">
 <meta property="og:title" content="<%= pageTitle %>">
 <meta property="og:description" content="<%= pageDescription %>">
 <meta property="og:image" content="<%= pageImage %>">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="theme-color" content="#050505">
+<meta name="theme-color" content="<%= theme === 'light' ? '#f6f6f3' : '#050505' %>">
 <link rel="icon" href="/brand/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/brand/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -30,24 +36,32 @@
 <body>
 <% if (locals.user) { %>
 <div class="admin-strip"><div class="wrap">
-  <span>Вы вошли как <%= user.name || user.email %></span>
-  <span><% if (locals.editUrl) { %><a href="<%= editUrl %>">Редактировать эту страницу</a> · <% } %><a href="/admin">Админка →</a></span>
+  <span><%= t('admin.loggedAs', { name: user.name || user.email }) %></span>
+  <span><% if (locals.editUrl) { %><a href="<%= editUrl %>"><%= t('admin.editPage') %></a> · <% } %><a href="/admin"><%= t('admin.panel') %></a></span>
 </div></div>
 <% } %>
 <header class="site-header">
   <div class="wrap header-inner">
-    <a class="brand" href="/" aria-label="<%= settings.site_name %> — на главную">
+    <a class="brand" href="<%= L('/') %>" aria-label="<%= t('a11y.home', { name: settings.site_name }) %>">
       <%- include('mark') %>
       <span class="brand-name"><%= settings.site_name %><small><%= settings.site_full_name %></small></span>
     </a>
-    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav"><span></span><span class="visually-hidden">Меню</span></button>
-    <nav id="site-nav" class="site-nav" aria-label="Основное меню">
-      <a href="/catalog"<% if (nav === 'catalog') { %> aria-current="page"<% } %>>Каталог</a>
-      <a href="/#schools">Школам</a>
-      <a href="/#about">О лаборатории</a>
-      <a href="/#contacts">Контакты</a>
-      <a class="btn btn-sm" href="/request">Оставить заявку</a>
+    <nav id="site-nav" class="site-nav" aria-label="<%= t('a11y.mainNav') %>">
+      <a class="nav-link" href="<%= L('/catalog') %>"<% if (nav === 'catalog') { %> aria-current="page"<% } %>><%= t('nav.catalog') %></a>
+      <a class="nav-link" href="<%= L('/#schools') %>"><%= t('nav.schools') %></a>
+      <a class="nav-link" href="<%= L('/#about') %>"><%= t('nav.about') %></a>
+      <a class="nav-link" href="<%= L('/#contacts') %>"><%= t('nav.contacts') %></a>
+      <%- include('lang-switch', { variant: 'menu' }) %>
+      <a class="btn btn-sm" href="<%= L('/request') %>"><%= t('cta.request') %></a>
     </nav>
+    <div class="header-tools">
+      <%- include('lang-switch', { variant: 'bar' }) %>
+      <button class="theme-toggle" type="button" data-theme-toggle aria-label="<%= t('theme.toggle') %>" title="<%= t('theme.toggle') %>">
+        <svg class="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M4.6 4.6l1.6 1.6M17.8 17.8l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.6 19.4l1.6-1.6M17.8 6.2l1.6-1.6"/></svg>
+        <svg class="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 14.6A8.5 8.5 0 0 1 9.4 3.5a8.5 8.5 0 1 0 11.1 11.1Z"/></svg>
+      </button>
+      <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav"><span></span><span class="visually-hidden"><%= t('a11y.menu') %></span></button>
+    </div>
   </div>
 </header>
 <main id="main">

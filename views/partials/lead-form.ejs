@@ -3,35 +3,35 @@
   const e = locals.errors || {};
   const prod = locals.product || null;
 %>
-<form class="form-card" method="post" action="/request<% if (locals.anchor) { %>#<%= anchor %><% } %>" data-lead-form novalidate>
-  <% if (prod) { %>
-  <div class="form-product"><span class="mono"><%= prod.code %></span><span>Заявка на <strong><%= prod.title %></strong></span></div>
+<form class="form-card" method="post" action="<%= L('/request') %><% if (locals.anchor) { %>#<%= anchor %><% } %>" data-lead-form data-sending="<%= t('form.sending') %>" novalidate>
+  <% if (prod) { const [before, after = ''] = t('form.for').split('{title}'); %>
+  <div class="form-product"><span class="mono"><%= prod.code %></span><span><%= before %><strong><%= prod.title %></strong><%= after %></span></div>
   <input type="hidden" name="product_id" value="<%= prod.id %>">
   <% } %>
   <% if (e.form) { %><div class="form-error" role="alert"><%= e.form %></div><% } %>
   <div class="form-grid">
     <div class="field<%= e.name ? ' has-error' : '' %>">
-      <label for="lf-name">Имя *</label>
-      <input id="lf-name" name="name" value="<%= v.name || '' %>" autocomplete="name" placeholder="Как к вам обращаться" required maxlength="120"<% if (e.name) { %> aria-invalid="true" aria-describedby="lf-name-err"<% } %>>
+      <label for="lf-name"><%= t('form.name') %></label>
+      <input id="lf-name" name="name" value="<%= v.name || '' %>" autocomplete="name" placeholder="<%= t('form.namePh') %>" required maxlength="120"<% if (e.name) { %> aria-invalid="true" aria-describedby="lf-name-err"<% } %>>
       <% if (e.name) { %><p class="field-error" id="lf-name-err"><%= e.name %></p><% } %>
     </div>
     <div class="field">
-      <label for="lf-org">Школа / организация</label>
-      <input id="lf-org" name="organization" value="<%= v.organization || '' %>" autocomplete="organization" placeholder="Например, школа-лицей №7" maxlength="160">
+      <label for="lf-org"><%= t('form.org') %></label>
+      <input id="lf-org" name="organization" value="<%= v.organization || '' %>" autocomplete="organization" placeholder="<%= t('form.orgPh') %>" maxlength="160">
     </div>
     <div class="field full<%= e.contact ? ' has-error' : '' %>">
-      <label for="lf-contact">Телефон, e-mail или Telegram *</label>
-      <input id="lf-contact" name="contact" value="<%= v.contact || '' %>" placeholder="+7 700 000 00 00 или name@school.kz" required maxlength="160"<% if (e.contact) { %> aria-invalid="true" aria-describedby="lf-contact-err"<% } %>>
+      <label for="lf-contact"><%= t('form.contact') %></label>
+      <input id="lf-contact" name="contact" value="<%= v.contact || '' %>" placeholder="<%= t('form.contactPh') %>" required maxlength="160"<% if (e.contact) { %> aria-invalid="true" aria-describedby="lf-contact-err"<% } %>>
       <% if (e.contact) { %><p class="field-error" id="lf-contact-err"><%= e.contact %></p><% } %>
     </div>
     <div class="field full">
-      <label for="lf-msg">Задача или вопрос</label>
-      <textarea id="lf-msg" name="message" placeholder="Сколько классов, какие сроки, что уже есть в школе — всё, что поможет подготовить предложение" maxlength="3000"><%= v.message || '' %></textarea>
+      <label for="lf-msg"><%= t('form.message') %></label>
+      <textarea id="lf-msg" name="message" placeholder="<%= t('form.messagePh') %>" maxlength="3000"><%= v.message || '' %></textarea>
     </div>
   </div>
-  <div class="hp" aria-hidden="true"><label>Сайт <input name="website" tabindex="-1" autocomplete="off"></label></div>
+  <div class="hp" aria-hidden="true"><label>Website <input name="website" tabindex="-1" autocomplete="off"></label></div>
   <div class="form-foot">
-    <small>Ответим в течение рабочего дня. Отправляя заявку, вы соглашаетесь на обработку контактных данных.</small>
-    <button class="btn" type="submit">Отправить заявку <span class="arrow">→</span></button>
+    <small><%= t('form.note') %></small>
+    <button class="btn" type="submit"><%= t('form.submit') %> <span class="arrow">→</span></button>
   </div>
 </form>

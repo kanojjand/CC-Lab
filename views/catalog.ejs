@@ -4,10 +4,10 @@
     const next = { ...filters, ...patch };
     for (const [k, val] of Object.entries(next)) if (val && !(k === 'sort' && val === 'recommended')) params.set(k, val);
     const s = params.toString();
-    return '/catalog' + (s ? '?' + s : '');
+    return L('/catalog' + (s ? '?' + s : ''));
   };
-  const heading = activeCategory ? activeCategory.name : 'Каталог разработок';
-  const lead = activeCategory && activeCategory.description ? activeCategory.description : 'Курсы, сайты для школ, образовательные программы и платформы. Каждую разработку можно внедрить под ключ.';
+  const heading = activeCategory ? activeCategory.name : t('catalog.title');
+  const lead = activeCategory && activeCategory.description ? activeCategory.description : t('catalog.lead');
   const filtered = filters.q || filters.tag;
 %>
 <%- include('partials/top', { title: heading, description: lead, nav: 'catalog', canonical: activeCategory ? `/catalog?category=${activeCategory.slug}` : '/catalog' }) %>
@@ -15,7 +15,7 @@
 <section class="page-head">
   <div class="page-head-art" aria-hidden="true"><%- include('partials/mark') %></div>
   <div class="wrap">
-    <span class="eyebrow">Каталог · <%= totalPublished %> <%= plural(totalPublished, 'разработка', 'разработки', 'разработок') %></span>
+    <span class="eyebrow"><%= t('catalog.eyebrow') %> · <%= tp(totalPublished, 'unit.product') %></span>
     <h1><%= heading %></h1>
     <p><%= lead %></p>
   </div>
@@ -23,40 +23,41 @@
 
 <div class="wrap">
   <div class="toolbar">
-    <form class="search" method="get" action="/catalog" role="search">
+    <form class="search" method="get" action="<%= L('/catalog') %>" role="search">
       <% if (filters.category) { %><input type="hidden" name="category" value="<%= filters.category %>"><% } %>
       <% if (filters.sort !== 'recommended') { %><input type="hidden" name="sort" value="<%= filters.sort %>"><% } %>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-      <label class="visually-hidden" for="catalog-q">Поиск по каталогу</label>
-      <input id="catalog-q" type="search" name="q" value="<%= filters.q %>" placeholder="Python, робототехника, 5 класс…" maxlength="100">
-      <button class="btn" type="submit">Найти</button>
+      <label class="visually-hidden" for="catalog-q"><%= t('catalog.searchLabel') %></label>
+      <input id="catalog-q" type="search" name="q" value="<%= filters.q %>" placeholder="<%= t('catalog.searchPlaceholder') %>" maxlength="100">
+      <button class="btn" type="submit"><%= t('catalog.find') %></button>
     </form>
-    <form class="sort" method="get" action="/catalog">
+    <form class="sort" method="get" action="<%= L('/catalog') %>">
       <% for (const k of ['category', 'q', 'tag']) { if (filters[k]) { %><input type="hidden" name="<%= k %>" value="<%= filters[k] %>"><% } } %>
-      <label for="catalog-sort">Сортировка</label>
+      <label for="catalog-sort"><%= t('catalog.sort') %></label>
       <select id="catalog-sort" name="sort" data-autosubmit>
         <% for (const [key, label] of Object.entries(sortLabels)) { %><option value="<%= key %>"<%= filters.sort === key ? ' selected' : '' %>><%= label %></option><% } %>
       </select>
-      <button class="btn btn-sm" type="submit">ОК</button>
+      <button class="btn btn-sm" type="submit"><%= t('catalog.ok') %></button>
     </form>
   </div>
 
-  <nav class="chips" aria-label="Категории">
-    <a class="chip" href="<%= qs({ category: '' }) %>" aria-current="<%= !filters.category %>">Все <span class="n"><%= totalPublished %></span></a>
+  <nav class="chips" aria-label="<%= t('catalog.categories') %>">
+    <a class="chip" href="<%= qs({ category: '' }) %>" aria-current="<%= !filters.category %>"><%= t('catalog.all') %> <span class="n"><%= totalPublished %></span></a>
     <% categories.forEach((c) => { %>
     <a class="chip" href="<%= qs({ category: c.slug }) %>" aria-current="<%= filters.category === c.slug %>"><%= c.name %> <span class="n"><%= c.count %></span></a>
     <% }) %>
   </nav>
-  <% if (tags.length) { %>
-  <div class="tags-row"><span>Теги:</span>
-    <% tags.forEach((t) => { %><a href="<%= qs({ tag: filters.tag === t ? '' : t }) %>" aria-current="<%= filters.tag === t %>">#<%= t %></a><% }) %>
+  <%# теги ведутся только по-русски — на казахской и английской версиях их не показываем %>
+  <% if (tags.length && lang === 'ru') { %>
+  <div class="tags-row"><span><%= t('catalog.tags') %></span>
+    <% tags.forEach((tg) => { %><a href="<%= qs({ tag: filters.tag === tg ? '' : tg }) %>" aria-current="<%= filters.tag === tg %>">#<%= tg %></a><% }) %>
   </div>
   <% } %>
   <% if (filtered) { %>
   <p class="filter-note">
-    <% if (filters.q) { %><span>Поиск: «<strong><%= filters.q %></strong>»</span><% } %>
-    <% if (filters.tag) { %><span>Тег: <strong>#<%= filters.tag %></strong></span><% } %>
-    <a href="<%= qs({ q: '', tag: '' }) %>">Сбросить</a>
+    <% if (filters.q) { %><span><%= t('catalog.searchFor') %> «<strong><%= filters.q %></strong>»</span><% } %>
+    <% if (filters.tag) { %><span><%= t('catalog.tag') %> <strong>#<%= filters.tag %></strong></span><% } %>
+    <a href="<%= qs({ q: '', tag: '' }) %>"><%= t('catalog.reset') %></a>
   </p>
   <% } %>
 </div>
@@ -64,16 +65,16 @@
 <section class="catalog-body">
   <div class="wrap">
     <% if (products.length) { %>
-    <p class="results-count">Найдено: <%= products.length %></p>
+    <p class="results-count"><%= t('catalog.found', { n: products.length }) %></p>
     <div class="grid">
-      <% products.forEach((p) => { %><div class="reveal"><%- include('partials/card', { p }) %></div><% }) %>
+      <% products.forEach((p, i) => { %><div class="reveal" style="--d:<%= i % 3 %>"><%- include('partials/card', { p }) %></div><% }) %>
     </div>
     <% } else { %>
     <div class="empty">
       <%- include('partials/mark') %>
-      <h3><%= filtered ? 'Ничего не нашлось' : 'Здесь пока пусто' %></h3>
-      <p><%= filtered ? 'Попробуйте другой запрос или сбросьте фильтры. А если нужной разработки нет — расскажите о задаче, возможно, мы сделаем её под вас.' : 'Разработки в этом разделе скоро появятся. Оставьте заявку — расскажем, что готовится.' %></p>
-      <a class="btn" href="/request">Оставить заявку</a>
+      <h3><%= filtered ? t('catalog.notFound.title') : t('catalog.emptyCat.title') %></h3>
+      <p><%= filtered ? t('catalog.notFound.text') : t('catalog.emptyCat.text') %></p>
+      <a class="btn" href="<%= L('/request') %>"><%= t('cta.request') %></a>
     </div>
     <% } %>
   </div>

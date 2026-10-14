@@ -1,11 +1,11 @@
 <article class="card">
-  <a class="card-link" href="/catalog/<%= p.slug %>">
-    <div class="card-media">
+  <a class="card-link" href="<%= L(`/catalog/${p.slug}`) %>">
+    <div class="card-media" style="view-transition-name: media-<%= p.id %>">
       <% if (p.cover) { %><img src="/uploads/<%= p.cover %>" alt="" loading="lazy"><% } else { %><%- coverArt(p.id) %><% } %>
-      <% if (p.featured && locals.showBadge !== false) { %><span class="card-badge">Хит</span><% } %>
+      <% if (p.featured && locals.showBadge !== false) { %><span class="card-badge"><%= t('product.hit') %></span><% } %>
     </div>
     <div class="card-body">
-      <div class="card-meta"><span><%= p.code %></span><span><%= p.category_name || 'Разработка' %></span></div>
+      <div class="card-meta"><span><%= p.code %></span><span><%= p.category_name || t('product.fallbackCategory') %></span></div>
       <h3><%= p.title %></h3>
       <% if (p.tagline) { %><p class="card-tagline"><%= truncate(p.tagline, 150) %></p><% } %>
       <% const facts = [p.audience, p.duration].filter(Boolean); if (facts.length) { %>

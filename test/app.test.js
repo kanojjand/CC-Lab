@@ -7,6 +7,12 @@ import path from 'node:path';
 import { createApp } from '../src/app.js';
 import { slugify, parsePrice, modules, normalizeTags } from '../src/util.js';
 import { renderMarkdown } from '../src/markdown.js';
+import { localePath, splitLang, translatePlural } from '../src/i18n.js';
+import ru from '../src/locales/ru.js';
+import kk from '../src/locales/kk.js';
+import en from '../src/locales/en.js';
+
+const strip = (html) => html.replace(/<[^>]+>/g, '');
 
 const ADMIN = { email: 'admin@test.local', password: 'correct-horse-42' };
 // минимальный валидный PNG 1×1
@@ -193,6 +199,103 @@ test('заявки: смена статуса и выгрузка CSV', async ()
   assert.match(csv, /В работе/);
 });
 
+test('языки: казахская и английская версии, переводы контента и откат на русский', async () => {
+  const kkHome = await (await get('/kk')).text();
+  assert.match(kkHome, /<html lang="kk"/);
+  assert.match(kkHome, /Өтінім қалдыру/);
+  assert.match(strip(kkHome), /EdTech әзірлемелерінің зертханасы/);
+  assert.match(kkHome, /href="\/kk\/catalog"/);
+  assert.match(kkHome, /hreflang="en" href="[^"]+\/en"/);
+
+  const enCatalog = await (await get('/en/catalog')).text();
+  assert.match(enCatalog, /<html lang="en"/);
+  assert.match(enCatalog, /Robotics: from LEGO to Arduino/);
+  assert.match(enCatalog, /School websites/);
+  assert.match(enCatalog, /250,000 ₸/);
+  assert.match(enCatalog, /On request/);
+
+  const kkProduct = await (await get('/kk/catalog/robototehnika-ot-lego-do-arduino')).text();
+  assert.match(kkProduct, /Робототехника: LEGO-дан Arduino-ға дейін/);
+  assert.match(kkProduct, /Не кіреді/);
+  assert.match(kkProduct, /rel="canonical" href="[^"]+\/kk\/catalog\/robototehnika-ot-lego-do-arduino"/);
+
+  // поиск находит разработку и по переводу
+  assert.match(await (await get(`/en/catalog?q=${encodeURIComponent('robotics')}`)).text(), /Robotics: from LEGO to Arduino/);
+
+  // /ru/… — на адрес без префикса, админка — всегда без языка
+  const ruPrefixed = await get('/ru/catalog?q=x');
+  assert.equal(ruPrefixed.status, 301);
+  assert.equal(ruPrefixed.headers.get('location'), '/catalog?q=x');
+  assert.equal((await get('/en/admin')).headers.get('location'), '/admin');
+
+  const notFound = await get('/en/nope');
+  assert.equal(notFound.status, 404);
+  assert.match(await notFound.text(), /Page not found/);
+
+  assert.match(await (await get('/sitemap.xml')).text(), /\/kk\/catalog\/robototehnika-ot-lego-do-arduino/);
+});
+
+test('заявка с английской версии сохраняет язык и ведёт на английскую «Спасибо»', async () => {
+  const res = await get('/en/request', { method: 'POST', body: form({ name: 'John', contact: 'john@school.kz', product_id: '1' }) });
+  assert.equal(res.status, 303);
+  assert.match(res.headers.get('location'), /^\/en\/thanks\?product=/);
+  const [lead] = await ctx.store.listLeads();
+  assert.equal(lead.lang, 'en');
+  assert.equal(lead.product_title, 'Робототехника: от LEGO до Arduino'); // команде — по-русски
+
+  const thanks = await (await get(res.headers.get('location'))).text();
+  assert.match(thanks, /We’ve received your request for “Robotics: from LEGO to Arduino”/);
+
+  const bad = await get('/kk/request', { method: 'POST', body: form({ name: 'А', contact: '' }) });
+  assert.equal(bad.status, 422);
+  assert.match(await bad.text(), /Сізге қалай жүгінуге болады\?/);
+});
+
+test('тема: по умолчанию тёмная, светлая — из cookie', async () => {
+  assert.match(await (await get('/')).text(), /data-theme="dark"/);
+  const light = await (await get('/catalog', { headers: { cookie: 'cclab_theme=light' } })).text();
+  assert.match(light, /data-theme="light"/);
+  assert.match(light, /name="theme-color" content="#f6f6f3"/);
+});
+
+test('админка: переводы разработки и категории сохраняются и видны на сайте', async () => {
+  const { cookie, csrf } = await login();
+  const product = (await ctx.store.listAllProducts()).find((p) => p.title === 'Шахматы для начальной школы');
+  const fd = new FormData();
+  for (const [k, v] of Object.entries({
+    title: product.title,
+    status: 'published',
+    i18n_kk_title: 'Бастауыш мектепке арналған шахмат',
+    i18n_en_tagline: 'A course for grades 1–4',
+    i18n_en_features: '- 34 lessons\n- Tournament',
+  })) fd.set(k, v);
+  const res = await get(`/admin/products/${product.id}?_csrf=${encodeURIComponent(csrf)}`, { method: 'POST', headers: { cookie }, body: fd });
+  assert.equal(res.status, 303);
+  const saved = await ctx.store.getProduct(product.id);
+  assert.deepEqual(saved.i18n, {
+    kk: { title: 'Бастауыш мектепке арналған шахмат' },
+    en: { tagline: 'A course for grades 1–4', features: '34 lessons\nTournament' },
+  });
+
+  assert.match(await (await get(`/kk/catalog/${product.slug}`)).text(), /Бастауыш мектепке арналған шахмат/);
+  const enPage = await (await get(`/en/catalog/${product.slug}`)).text();
+  assert.match(enPage, /Шахматы для начальной школы/); // названия на английском нет → русское
+  assert.match(enPage, /A course for grades 1–4/);
+  assert.match(enPage, /Tournament/);
+
+  const formPage = await (await get(`/admin/products/${product.id}/edit`, { headers: { cookie } })).text();
+  assert.match(formPage, /name="i18n_kk_title" value="Бастауыш мектепке арналған шахмат"/);
+
+  const cat = (await ctx.store.listCategories()).find((c) => c.slug === 'platforms');
+  const catRes = await get(`/admin/categories/${cat.id}`, {
+    method: 'POST',
+    headers: { cookie },
+    body: form({ _csrf: csrf, name: cat.name, slug: cat.slug, description: cat.description, sort_order: String(cat.sort_order), i18n_en_name: 'Online platforms' }),
+  });
+  assert.equal(catRes.status, 303);
+  assert.match(await (await get('/en/catalog')).text(), /Online platforms/);
+});
+
 test('настройки сайта меняют тексты на главной', async () => {
   const { cookie, csrf } = await login();
   const res = await get('/admin/settings', {
@@ -202,11 +305,24 @@ test('настройки сайта меняют тексты на главно�
   });
   assert.equal(res.status, 303);
   const home = await (await get('/')).text();
-  assert.match(home, /Новый заголовок лаборатории/);
+  // слова заголовка обёрнуты в <span> для анимации — сравниваем текст без тегов
+  assert.match(home.replace(/<[^>]+>/g, ''), /Новый заголовок лаборатории/);
   assert.match(home, /https:\/\/t\.me\/cclab/);
 
   const badTz = await get('/admin/settings', { method: 'POST', headers: { cookie }, body: form({ _csrf: csrf, timezone: 'Mars/Base' }) });
   assert.equal(badTz.status, 422);
+});
+
+test('переводы текстов главной: свой текст или русский, если перевод пустой', async () => {
+  const { cookie, csrf } = await login();
+  const res = await get('/admin/settings', {
+    method: 'POST',
+    headers: { cookie },
+    body: form({ _csrf: csrf, site_name: 'CC Lab', hero_title: 'Русский заголовок', 'hero_title.en': 'English headline', timezone: 'Asia/Almaty' }),
+  });
+  assert.equal(res.status, 303);
+  assert.match(strip(await (await get('/en')).text()), /English headline/);
+  assert.match(strip(await (await get('/kk')).text()), /Русский заголовок/);
 });
 
 test('демо-данные удаляются одной кнопкой', async () => {
@@ -235,6 +351,22 @@ test('утилиты: транслитерация, цены, программа
     { title: 'Проект', text: '' },
   ]);
   assert.equal(normalizeTags('Python, python;  Arduino '), 'python,arduino');
+});
+
+test('i18n: адреса с языком, множественное число, полнота словарей', () => {
+  assert.deepEqual(splitLang('/kk/catalog?q=1'), { lang: 'kk', rest: '/catalog?q=1', explicit: true });
+  assert.deepEqual(splitLang('/kk?q=1'), { lang: 'kk', rest: '/?q=1', explicit: true });
+  assert.equal(splitLang('/kkk').lang, 'ru');
+  assert.equal(localePath('en', '/'), '/en');
+  assert.equal(localePath('en', '/#about'), '/en#about');
+  assert.equal(localePath('kk', '/?q=1'), '/kk?q=1');
+  assert.equal(localePath('ru', '/catalog'), '/catalog');
+  assert.equal(translatePlural('ru', 5, 'unit.product'), '5 разработок');
+  assert.equal(translatePlural('ru', 22, 'unit.product'), '22 разработки');
+  assert.equal(translatePlural('en', 1, 'unit.product'), '1 product');
+  assert.equal(translatePlural('kk', 3, 'unit.product'), '3 әзірлеме');
+  // в каждом словаре есть все ключи русского
+  for (const dict of [kk, en]) assert.deepEqual(Object.keys(dict).sort(), Object.keys(ru).sort());
 });
 
 test('Markdown не пропускает HTML и javascript-ссылки', () => {

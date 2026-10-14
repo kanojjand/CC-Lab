@@ -2,6 +2,9 @@ import express from 'express';
 import {
   createRateLimiter, endSession, hashPassword, requireAdmin, startSession, verifyCsrf, verifyPassword,
 } from '../auth.js';
+import {
+  CATEGORY_I18N_FIELDS, EXTRA_LANGS, LANG_META, PRODUCT_I18N_FIELDS, SETTING_I18N_KEYS, parseTranslations,
+} from '../i18n.js';
 import { LEAD_STATUSES, SETTING_DEFAULTS } from '../store.js';
 import {
   createUploader, MAX_FILE_MB, MAX_GALLERY, storeUploads, uploadErrorMessage,
@@ -22,7 +25,7 @@ const FLASH = {
   user_added: 'Пользователь добавлен.',
 };
 
-const SETTING_FIELDS = [
+const BASE_SETTING_FIELDS = [
   { key: 'site_name', label: 'Название сайта', max: 60 },
   { key: 'site_full_name', label: 'Полное название', max: 120 },
   { key: 'hero_title', label: 'Заголовок на главной', max: 140 },
@@ -37,13 +40,45 @@ const SETTING_FIELDS = [
   { key: 'timezone', label: 'Часовой пояс для дат в админке (например, Asia/Almaty)', max: 60 },
 ];
 
+// переводы текстов главной: hero_title.kk, hero_title.en, … — с теми же ограничениями, что у русских
+const SETTING_FIELDS = [
+  ...BASE_SETTING_FIELDS,
+  ...EXTRA_LANGS.flatMap((lang) => SETTING_I18N_KEYS.map((key) => {
+    const base = BASE_SETTING_FIELDS.find((f) => f.key === key);
+    return { ...base, key: `${key}.${lang}`, label: base.label, lang };
+  })),
+];
+
 function asArray(v) {
   if (v === undefined || v === null || v === '') return [];
   return Array.isArray(v) ? v : [v];
 }
 
+// Максимальная длина переводимых полей — как у русских
+const I18N_LIMITS = {
+  title: 200, tagline: 300, description: 20000, audience: 120, duration: 120, format: 120, price_note: 120,
+  name: 80,
+};
+const I18N_LINE_FIELDS = new Set(['features', 'modules']);
+
+/** Поля i18n_kk_title, i18n_en_title, … → JSON {"kk": {"title": …}, "en": {…}} без пустых значений */
+function translationsFromForm(body, fields, limits = I18N_LIMITS) {
+  const out = {};
+  for (const lang of EXTRA_LANGS) {
+    const tr = {};
+    for (const f of fields) {
+      const raw = body[`i18n_${lang}_${f}`];
+      const value = I18N_LINE_FIELDS.has(f) ? normalizeLines(raw) : str(raw, limits[f] ?? 300);
+      if (value) tr[f] = value;
+    }
+    if (Object.keys(tr).length) out[lang] = tr;
+  }
+  return JSON.stringify(out);
+}
+
 function productFromForm(body) {
   return {
+    translations: translationsFromForm(body, PRODUCT_I18N_FIELDS),
     title: str(body.title, 200),
     slug: slugify(str(body.slug, 100)),
     category_id: toInt(body.category_id),
@@ -193,7 +228,9 @@ export function adminRoutes({ store }) {
     const data = productFromForm(body);
     const errors = await validateProduct(data, body, req);
     if (Object.keys(errors).length) {
-      return renderProductForm(res, { product: null, values: { ...body, ...data }, errors, status: 422 });
+      return renderProductForm(res, {
+        product: null, values: { ...body, ...data, i18n: parseTranslations(data.translations) }, errors, status: 422,
+      });
     }
     const [cover = ''] = await storeUploads(store, req.files?.cover);
     const gallery = await storeUploads(store, req.files?.gallery);
@@ -214,7 +251,12 @@ export function adminRoutes({ store }) {
     const data = productFromForm(body);
     const errors = await validateProduct(data, body, req);
     if (Object.keys(errors).length) {
-      return renderProductForm(res, { product, values: { ...product, ...body, ...data }, errors, status: 422 });
+      return renderProductForm(res, {
+        product,
+        values: { ...product, ...body, ...data, i18n: parseTranslations(data.translations) },
+        errors,
+        status: 422,
+      });
     }
 
     const toRemove = [];
@@ -277,6 +319,7 @@ export function adminRoutes({ store }) {
     slug: slugify(str(body.slug, 80)),
     description: str(body.description, 300),
     sort_order: toInt(body.sort_order, 0),
+    translations: translationsFromForm(body, CATEGORY_I18N_FIELDS),
   });
 
   router.post('/categories', async (req, res) => {
@@ -312,10 +355,10 @@ export function adminRoutes({ store }) {
   });
 
   router.get('/leads.csv', async (req, res) => {
-    const header = ['№', 'Дата (UTC)', 'Статус', 'Имя', 'Организация', 'Контакт', 'Разработка', 'Сообщение', 'Заметка'];
+    const header = ['№', 'Дата (UTC)', 'Статус', 'Имя', 'Организация', 'Контакт', 'Разработка', 'Сообщение', 'Заметка', 'Язык'];
     const rows = (await store.listLeads({ limit: 100000 })).map((l) => [
       l.id, new Date(l.created_at).toISOString().replace('T', ' ').slice(0, 16), LEAD_STATUSES[l.status],
-      l.name, l.organization, l.contact, l.product_title, l.message, l.note,
+      l.name, l.organization, l.contact, l.product_title, l.message, l.note, LANG_META[l.lang]?.name ?? l.lang,
     ]);
     const csv = [header, ...rows].map((r) => r.map(csvCell).join(';')).join('\r\n');
     res.set('Content-Disposition', `attachment; filename="cclab-leads-${new Date().toISOString().slice(0, 10)}.csv"`);

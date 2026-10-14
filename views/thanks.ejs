@@ -1,13 +1,13 @@
-<%- include('partials/top', { title: 'Заявка отправлена', noindex: true }) %>
+<%- include('partials/top', { title: t('thanks.title'), noindex: true }) %>
 <section class="center-page">
   <div class="wrap">
     <div class="big-star" aria-hidden="true"></div>
-    <span class="eyebrow">Заявка принята</span>
-    <h1 class="h-gap">Спасибо! Мы скоро свяжемся</h1>
-    <p><% if (product) { %>Заявка на «<%= product.title %>» уже у нас. <% } %>Обычно отвечаем в течение рабочего дня. А пока — загляните в каталог, там есть ещё много интересного.</p>
+    <span class="eyebrow"><%= t('thanks.eyebrow') %></span>
+    <h1 class="h-gap"><%= t('thanks.heading') %></h1>
+    <p><% if (product) { %><%= t('thanks.forProduct', { title: product.title }) %> <% } %><%= t('thanks.text') %></p>
     <div class="hero-actions">
-      <a class="btn" href="/catalog">В каталог <span class="arrow">→</span></a>
-      <a class="btn btn-ghost" href="/">На главную</a>
+      <a class="btn" href="<%= L('/catalog') %>"><%= t('btn.toCatalog') %> <span class="arrow">→</span></a>
+      <a class="btn btn-ghost" href="<%= L('/') %>"><%= t('btn.home') %></a>
     </div>
   </div>
 </section>

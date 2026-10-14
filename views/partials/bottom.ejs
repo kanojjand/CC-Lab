@@ -4,31 +4,32 @@
     <div class="footer-grid">
       <div class="footer-brand">
         <%- include('mark') %>
-        <p><strong><%= settings.site_name %></strong> · <%= settings.site_full_name %>. Курсы, сайты для школ и образовательные программы — от идеи до внедрения в классе.</p>
+        <p><strong><%= settings.site_name %></strong> · <%= settings.site_full_name %>. <%= t('footer.tagline') %></p>
       </div>
       <div class="footer-col">
-        <h4>Навигация</h4>
+        <h4><%= t('footer.nav') %></h4>
         <ul>
-          <li><a href="/catalog">Каталог</a></li>
-          <li><a href="/#schools">Как мы работаем</a></li>
-          <li><a href="/#about">О лаборатории</a></li>
-          <li><a href="/request">Оставить заявку</a></li>
+          <li><a href="<%= L('/catalog') %>"><%= t('nav.catalog') %></a></li>
+          <li><a href="<%= L('/#schools') %>"><%= t('footer.how') %></a></li>
+          <li><a href="<%= L('/#about') %>"><%= t('nav.about') %></a></li>
+          <li><a href="<%= L('/request') %>"><%= t('cta.request') %></a></li>
         </ul>
       </div>
       <div class="footer-col">
-        <h4>Контакты</h4>
+        <h4><%= t('footer.contacts') %></h4>
         <ul>
           <% if (settings.contact_email) { %><li><a href="mailto:<%= settings.contact_email %>"><%= settings.contact_email %></a></li><% } %>
           <% if (settings.contact_phone) { %><li><a href="tel:<%= settings.contact_phone.replace(/[^\d+]/g, '') %>"><%= settings.contact_phone %></a></li><% } %>
           <% if (telegram) { %><li><a href="<%= telegram.url %>" target="_blank" rel="noopener"><%= telegram.label %></a></li><% } %>
           <% if (settings.contact_address) { %><li><span class="muted"><%= settings.contact_address %></span></li><% } %>
-          <% if (!settings.contact_email && !settings.contact_phone && !telegram) { %><li><a href="/request">Написать нам</a></li><% } %>
+          <% if (!settings.contact_email && !settings.contact_phone && !telegram) { %><li><a href="<%= L('/request') %>"><%= t('footer.write') %></a></li><% } %>
         </ul>
       </div>
     </div>
     <div class="footer-word" aria-hidden="true">CC LAB</div>
     <div class="footer-bottom">
       <span>© <%= new Date().getFullYear() %> <%= settings.site_name %> — <%= settings.site_full_name %></span>
+      <%- include('lang-switch', { variant: 'footer' }) %>
       <span>EdTech · made by Code Collective</span>
     </div>
   </div>

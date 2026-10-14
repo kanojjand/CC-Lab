@@ -7,7 +7,13 @@ import { loadConfig } from './config.js';
 import { openDatabase, withLock } from './db.js';
 import { createStore, LEAD_STATUSES } from './store.js';
 import { seedDatabase } from './seed.js';
-import { hashPassword, loadSession, randomToken } from './auth.js';
+import {
+  hashPassword, loadSession, parseCookies, randomToken,
+} from './auth.js';
+import {
+  DEFAULT_LANG, EXTRA_LANGS, LANG_META, LANGS, localePath, localizeSettings, parseTranslations, splitLang, translate,
+  translatePlural,
+} from './i18n.js';
 import { renderMarkdown } from './markdown.js';
 import { coverArt, heroRings, starPath } from './art.js';
 import {
@@ -70,6 +76,9 @@ export async function createApp(overrides = {}) {
     truncate,
     productCode,
     leadStatuses: LEAD_STATUSES,
+    langMeta: LANG_META,
+    extraLangs: EXTRA_LANGS,
+    i18nOf: parseTranslations,
     asset: (p) => `${p}?v=${assetVersion}`,
   });
 
@@ -107,10 +116,33 @@ export async function createApp(overrides = {}) {
     return res.send(Buffer.from(file.data));
   });
 
+  // язык из адреса: /kk/… и /en/… — переводы, без префикса — русский; тема — из cookie
+  app.use((req, res, next) => {
+    const { lang, rest, explicit } = splitLang(req.url);
+    if (explicit && lang === DEFAULT_LANG) return res.redirect(301, rest);
+    if (explicit && rest.startsWith('/admin')) return res.redirect(302, rest);
+    req.url = rest;
+    req.lang = lang;
+    Object.assign(res.locals, {
+      lang,
+      langs: LANGS.map((code) => ({ code, ...LANG_META[code], url: localePath(code, rest) })),
+      t: (key, vars) => translate(lang, key, vars),
+      tp: (n, key, vars) => translatePlural(lang, n, key, vars),
+      L: (p) => localePath(lang, p),
+      Lfor: localePath,
+      theme: parseCookies(req.headers.cookie).cclab_theme === 'light' ? 'light' : 'dark',
+    });
+    res.set('Content-Language', LANG_META[lang].hreflang);
+    next();
+  });
+
   app.use(async (req, res, next) => {
     const settings = await store.getSettings();
-    res.locals.settings = settings;
-    res.locals.fmtPrice = (price) => formatPrice(price, settings.currency);
+    res.locals.settings = localizeSettings(settings, req.lang);
+    res.locals.fmtPrice = (price) => formatPrice(price, settings.currency, {
+      locale: LANG_META[req.lang].locale,
+      onRequest: res.locals.t('price.onRequest'),
+    });
     res.locals.fmtDate = (value) => formatDate(value, settings.timezone);
     res.locals.siteUrl = config.siteUrl || `${req.protocol}://${req.get('host')}`;
     res.locals.telegram = telegramLink(settings.contact_telegram);
@@ -123,8 +155,8 @@ export async function createApp(overrides = {}) {
 
   app.use((req, res) => {
     res.status(404).render('error', {
-      title: 'Страница не найдена',
-      message: 'Такой страницы нет — возможно, разработку сняли с публикации или ссылка устарела.',
+      title: res.locals.t('error.404.title'),
+      message: res.locals.t('error.404.text'),
       code: 404,
     });
   });
@@ -136,9 +168,10 @@ export async function createApp(overrides = {}) {
     }
     console.error(err);
     if (res.headersSent) return undefined;
+    const lang = req.lang || DEFAULT_LANG;
     return res.status(500).render('error', {
-      title: 'Что-то пошло не так',
-      message: 'Мы уже разбираемся. Попробуйте обновить страницу чуть позже.',
+      title: translate(lang, 'error.500.title'),
+      message: translate(lang, 'error.500.text'),
       code: 500,
     });
   });

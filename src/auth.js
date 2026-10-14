@@ -24,7 +24,7 @@ export function randomToken(bytes = 32) {
 
 const sha256 = (s) => crypto.createHash('sha256').update(s).digest('hex');
 
-function parseCookies(header) {
+export function parseCookies(header) {
   const out = {};
   for (const part of String(header || '').split(';')) {
     const i = part.indexOf('=');

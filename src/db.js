@@ -87,6 +87,13 @@ const MIGRATIONS = [
     created_at timestamptz NOT NULL DEFAULT now()
   );
   `,
+  // переводы контента на казахский и английский (JSON вида {"kk": {"title": "…"}, "en": {…}})
+  // и язык, на котором оставили заявку
+  `
+  ALTER TABLE products ADD COLUMN translations text NOT NULL DEFAULT '{}';
+  ALTER TABLE categories ADD COLUMN translations text NOT NULL DEFAULT '{}';
+  ALTER TABLE leads ADD COLUMN lang text NOT NULL DEFAULT 'ru';
+  `,
 ];
 
 const MIGRATION_LOCK = 742001;

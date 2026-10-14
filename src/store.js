@@ -1,3 +1,4 @@
+import { parseTranslations } from './i18n.js';
 import { parseJsonArray, productCode, slugify, tagList } from './util.js';
 
 export const SETTING_DEFAULTS = {
@@ -17,6 +18,24 @@ export const SETTING_DEFAULTS = {
   timezone: 'Asia/Almaty',
   meta_description:
     'CC Lab — каталог EdTech-разработок: курсы, сайты для школ и образовательные программы под ключ.',
+
+  // переводы текстов главной (редактируются в «Настройках»; пустое поле → русский текст)
+  'hero_title.kk': 'EdTech әзірлемелерінің зертханасы',
+  'hero_title.en': 'EdTech Development Lab',
+  'hero_subtitle.kk':
+    'Мектептерге арналған дайын курстар, сайттар және білім беру бағдарламалары — толық дайын күйінде. Каталогтан таңдаңыз — біз енгізіп, педагогтарды оқытамыз және байланыста қаламыз.',
+  'hero_subtitle.en':
+    'Ready-made courses, school websites and educational programs, delivered turnkey. Pick one from the catalog — we will implement it, train your teachers and stay in touch.',
+  'about_text.kk':
+    'Біз — **Code Collective**: білім беру саласына цифрлық өнімдер жасайтын бағдарламашылар мен педагогтар.\n\n' +
+    'Зертханада мектепте ұзақ дайындықсыз іске қосуға болатын курстарды, сайттарды және бағдарламаларды жинаймыз: әдістемелік нұсқаулықтарымен, сабақ жоспарларымен және қолдауымен.',
+  'about_text.en':
+    'We are **Code Collective**: developers and teachers building digital products for education.\n\n' +
+    'In the lab we create courses, websites and programs that a school can launch without lengthy preparation — complete with teacher guides, lesson plans and support.',
+  'meta_description.kk':
+    'CC Lab — EdTech әзірлемелерінің каталогы: курстар, мектеп сайттары және білім беру бағдарламалары толық дайын күйінде.',
+  'meta_description.en':
+    'CC Lab — a catalog of EdTech products: courses, school websites and educational programs, delivered turnkey.',
 };
 
 export const LEAD_STATUSES = {
@@ -29,12 +48,12 @@ export const LEAD_STATUSES = {
 const PRODUCT_FIELDS = [
   'slug', 'title', 'category_id', 'tagline', 'description', 'audience', 'duration', 'format', 'tags',
   'features', 'modules', 'price', 'price_note', 'demo_url', 'cover', 'gallery', 'status', 'featured',
-  'sort_order', 'is_demo',
+  'sort_order', 'is_demo', 'translations',
 ];
 const BOOL_FIELDS = new Set(['featured', 'is_demo']);
 
 const PRODUCT_SELECT = `
-  SELECT p.*, c.name AS category_name, c.slug AS category_slug
+  SELECT p.*, c.name AS category_name, c.slug AS category_slug, c.translations AS category_translations
   FROM products p LEFT JOIN categories c ON c.id = p.category_id`;
 
 const SORTS = {
@@ -59,13 +78,21 @@ export function decorateProduct(p) {
     code: productCode(p.id),
     tagList: tagList(p.tags),
     galleryList: parseJsonArray(p.gallery),
+    i18n: parseTranslations(p.translations),
     featured: Boolean(p.featured),
     is_demo: Boolean(p.is_demo),
   };
 }
 
+// ищем по русским текстам и по переводам — запрос на любом языке находит разработку
+const SEARCH_FIELDS = ['title', 'tagline', 'audience', 'format', 'description'];
+
 function searchText(p) {
-  return [p.title, p.tagline, p.tags, p.audience, p.format, p.description].join(' ').toLowerCase();
+  const parts = [p.tags, ...SEARCH_FIELDS.map((f) => p[f])];
+  for (const tr of Object.values(parseTranslations(p.translations))) {
+    if (tr && typeof tr === 'object') parts.push(...SEARCH_FIELDS.map((f) => tr[f]));
+  }
+  return parts.filter(Boolean).join(' ').toLowerCase();
 }
 
 function columnValue(field, value) {
@@ -130,19 +157,25 @@ export function createStore(db) {
       return slug;
     },
 
-    async createCategory({ name, slug, description = '', sort_order = 0 }) {
+    async createCategory({ name, slug, description = '', sort_order = 0, translations = '{}' }) {
       const s = await store.uniqueCategorySlug(slug || name);
       const row = await db.one(
-        'INSERT INTO categories (name, slug, description, sort_order) VALUES ($1, $2, $3, $4) RETURNING id',
-        [name, s, description, sort_order],
+        'INSERT INTO categories (name, slug, description, sort_order, translations) VALUES ($1, $2, $3, $4, $5) RETURNING id',
+        [name, s, description, sort_order, translations],
       );
       return row.id;
     },
 
-    async updateCategory(id, { name, slug, description = '', sort_order = 0 }) {
+    async updateCategory(id, { name, slug, description = '', sort_order = 0, translations = '{}' }) {
       const s = await store.uniqueCategorySlug(slug || name, id);
-      await db.query('UPDATE categories SET name = $1, slug = $2, description = $3, sort_order = $4 WHERE id = $5',
-        [name, s, description, sort_order, id]);
+      await db.query(
+        'UPDATE categories SET name = $1, slug = $2, description = $3, sort_order = $4, translations = $5 WHERE id = $6',
+        [name, s, description, sort_order, translations, id],
+      );
+    },
+
+    async setCategoryTranslations(id, translations) {
+      await db.query('UPDATE categories SET translations = $1 WHERE id = $2', [translations, id]);
     },
 
     async deleteCategory(id) {
@@ -302,11 +335,11 @@ export function createStore(db) {
     },
 
     // ---------- заявки ----------
-    async createLead({ product_id = null, product_title = '', name, organization = '', contact, message = '' }) {
+    async createLead({ product_id = null, product_title = '', name, organization = '', contact, message = '', lang = 'ru' }) {
       const row = await db.one(`
-        INSERT INTO leads (product_id, product_title, name, organization, contact, message)
-        VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
-      [product_id, product_title, name, organization, contact, message]);
+        INSERT INTO leads (product_id, product_title, name, organization, contact, message, lang)
+        VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
+      [product_id, product_title, name, organization, contact, message, lang]);
       return row.id;
     },
 

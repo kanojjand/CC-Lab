@@ -19,6 +19,7 @@
       <div class="lead-head">
         <span class="pill <%= l.status %>"><%= leadStatuses[l.status] %></span>
         <b><%= l.name %></b>
+        <% if (l.lang && l.lang !== 'ru' && langMeta[l.lang]) { %><span class="lang-badge" title="Заявка оставлена на версии сайта: <%= langMeta[l.lang].name %>"><%= langMeta[l.lang].short %></span><% } %>
         <span class="dim mono">#<%= l.id %> · <%= fmtDate(l.created_at) %></span>
       </div>
       <div class="lead-meta">

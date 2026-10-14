@@ -5,8 +5,8 @@
     <h1><%= title %></h1>
     <p><%= message %></p>
     <div class="hero-actions">
-      <a class="btn" href="/catalog">В каталог <span class="arrow">→</span></a>
-      <a class="btn btn-ghost" href="/">На главную</a>
+      <a class="btn" href="<%= L('/catalog') %>"><%= t('btn.toCatalog') %> <span class="arrow">→</span></a>
+      <a class="btn btn-ghost" href="<%= L('/') %>"><%= t('btn.home') %></a>
     </div>
   </div>
 </section>

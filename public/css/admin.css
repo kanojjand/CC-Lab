@@ -252,3 +252,18 @@ input[type='file']::file-selector-button { margin-right: 10px; padding: 6px 12px
 .settings-form { display: grid; gap: 18px; max-width: 860px; }
 .settings-form .mt { margin-top: 0; }
 .nowrap { white-space: nowrap; }
+
+/* переводы на казахский и английский */
+.lang-badge { display: inline-flex; align-items: center; padding: 3px 7px; border: 1px solid var(--line-strong); border-radius: 99px; font: 500 10.5px/1 var(--f-mono); letter-spacing: .06em; color: var(--muted); vertical-align: middle; }
+.i18n-intro { margin: 0 0 14px; }
+.i18n-block { border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel-2); }
+.i18n-block + .i18n-block { margin-top: 10px; }
+.i18n-block summary { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 12px 14px; cursor: pointer; list-style: none; font-size: 14px; }
+.i18n-block summary::-webkit-details-marker { display: none; }
+.i18n-block summary::after { content: '+'; margin-left: auto; font: 500 16px/1 var(--f-mono); color: var(--dim); }
+.i18n-block[open] summary::after { content: '−'; }
+.i18n-block summary .dim { font-size: 12.5px; }
+.i18n-fields { padding: 4px 14px 2px; border-top: 1px solid var(--line); }
+.i18n-fields > .field:first-child, .i18n-fields > .row:first-child { margin-top: 14px; }
+.i18n-compact { margin-bottom: 14px; background: transparent; }
+.i18n-compact summary { padding: 9px 12px; font-size: 13px; }

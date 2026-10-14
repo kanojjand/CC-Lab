@@ -5,18 +5,26 @@
 <% if (Object.keys(errors).length) { %><div class="alert" role="alert"><%= Object.values(errors).join(' ') %></div><% } %>
 <form method="post" action="/admin/settings" class="settings-form">
   <input type="hidden" name="_csrf" value="<%= csrf %>">
-  <% const groups = [['Бренд и главная', ['site_name', 'site_full_name', 'hero_title', 'hero_subtitle', 'about_text', 'meta_description']], ['Контакты', ['contact_phone', 'contact_email', 'contact_telegram', 'contact_address']], ['Прочее', ['currency', 'timezone']]]; %>
-  <% groups.forEach(([groupTitle, keys]) => { %>
+  <%
+    const groups = [
+      ['Бренд и главная', ['site_name', 'site_full_name', 'hero_title', 'hero_subtitle', 'about_text', 'meta_description']],
+      ...extraLangs.map((lang) => [`Главная — ${langMeta[lang].name}`, fields.filter((f) => f.lang === lang).map((f) => f.key), lang]),
+      ['Контакты', ['contact_phone', 'contact_email', 'contact_telegram', 'contact_address']],
+      ['Прочее', ['currency', 'timezone']],
+    ];
+  %>
+  <% groups.forEach(([groupTitle, keys, lang]) => { %>
   <section class="panel">
-    <div class="panel-head"><h2><%= groupTitle %></h2></div>
+    <div class="panel-head"><h2><% if (lang) { %><span class="lang-badge"><%= langMeta[lang].short %></span> <% } %><%= groupTitle %></h2></div>
     <div class="panel-body">
-      <% keys.map((k) => fields.find((f) => f.key === k)).forEach((f) => { %>
+      <% if (lang) { %><p class="hint i18n-intro">Пустое поле — на сайте будет русский текст. Поменяли русский текст выше — обновите и перевод.</p><% } %>
+      <% keys.map((k) => fields.find((f) => f.key === k)).forEach((f) => { const ph = f.lang ? values[f.key.split('.')[0]] : ''; %>
       <div class="field<%= errors[f.key] ? ' has-error' : '' %>">
         <label for="s-<%= f.key %>"><%= f.label %></label>
         <% if (f.textarea) { %>
-        <textarea id="s-<%= f.key %>" name="<%= f.key %>" maxlength="<%= f.max %>"<% if (f.tall) { %> class="tall"<% } %>><%= values[f.key] %></textarea>
+        <textarea id="s-<%= f.key %>" name="<%= f.key %>" maxlength="<%= f.max %>"<% if (f.tall) { %> class="tall"<% } %><% if (ph) { %> placeholder="<%= ph %>"<% } %>><%= values[f.key] %></textarea>
         <% } else { %>
-        <input id="s-<%= f.key %>" type="text" name="<%= f.key %>" value="<%= values[f.key] %>" maxlength="<%= f.max %>">
+        <input id="s-<%= f.key %>" type="text" name="<%= f.key %>" value="<%= values[f.key] %>" maxlength="<%= f.max %>"<% if (ph) { %> placeholder="<%= ph %>"<% } %>>
         <% } %>
         <% if (errors[f.key]) { %><p class="field-error"><%= errors[f.key] %></p><% } %>
       </div>

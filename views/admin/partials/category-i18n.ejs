@@ -1,0 +1,12 @@
+<% const filled = extraLangs.filter((l) => tr[l] && Object.keys(tr[l]).length).map((l) => langMeta[l].short); %>
+<details class="i18n-block i18n-compact">
+  <summary><span class="lang-badge">ҚАЗ · ENG</span><b>Переводы</b><span class="dim"><%= filled.length ? `есть: ${filled.join(', ')}` : 'не заполнено — на сайте будет русский текст' %></span></summary>
+  <div class="i18n-fields">
+    <% extraLangs.forEach((lang) => { const cur = tr[lang] || {}; %>
+    <div class="row">
+      <div class="field"><label for="<%= idPrefix %>-<%= lang %>-name">Название · <%= langMeta[lang].short %></label><input id="<%= idPrefix %>-<%= lang %>-name" type="text" name="i18n_<%= lang %>_name" value="<%= cur.name || '' %>" maxlength="80" placeholder="<%= base.name || '' %>"></div>
+      <div class="field"><label for="<%= idPrefix %>-<%= lang %>-desc">Описание · <%= langMeta[lang].short %></label><input id="<%= idPrefix %>-<%= lang %>-desc" type="text" name="i18n_<%= lang %>_description" value="<%= cur.description || '' %>" maxlength="300" placeholder="<%= base.description || '' %>"></div>
+    </div>
+    <% }) %>
+  </div>
+</details>

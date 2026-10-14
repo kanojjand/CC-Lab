@@ -105,9 +105,9 @@ export function coverArt(seed = 1) {
   return (
     `<svg class="cover-art" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false">` +
     `<defs><pattern id="${id}" width="16" height="16" patternUnits="userSpaceOnUse">` +
-    '<circle cx="1" cy="1" r="1" fill="#fff" fill-opacity=".09"/></pattern></defs>' +
+    '<circle cx="1" cy="1" r="1" fill="currentColor" fill-opacity=".09"/></pattern></defs>' +
     `<rect width="${W}" height="${H}" fill="url(#${id})"/>` +
-    `<g fill="none" stroke="#fff" stroke-width="1.5" stroke-linejoin="miter">${body}</g>` +
+    `<g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="miter">${body}</g>` +
     '</svg>'
   );
 }

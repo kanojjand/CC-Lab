@@ -39,9 +39,9 @@ export function parsePrice(value) {
   return Number.isSafeInteger(n) ? n : null;
 }
 
-export function formatPrice(price, currency = '₸') {
-  if (price === null || price === undefined || price === '') return 'По запросу';
-  const num = new Intl.NumberFormat('ru-RU').format(Number(price));
+export function formatPrice(price, currency = '₸', { locale = 'ru-RU', onRequest = 'По запросу' } = {}) {
+  if (price === null || price === undefined || price === '') return onRequest;
+  const num = new Intl.NumberFormat(locale).format(Number(price));
   return currency ? `${num} ${currency}` : num;
 }
 

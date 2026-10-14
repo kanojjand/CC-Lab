@@ -2,7 +2,9 @@
   const p = product;
   const feats = lines(p.features);
   const mods = modules(p.modules);
-  const facts = [['Для кого', p.audience], ['Длительность', p.duration], ['Формат', p.format], ['Код', p.code]].filter(([, v]) => v);
+  const facts = [['product.audience', p.audience], ['product.duration', p.duration], ['product.format', p.format], ['product.code', p.code]]
+    .filter(([, v]) => v)
+    .map(([k, v]) => [t(k), v]);
 %>
 <%- include('partials/top', {
   title: p.title,
@@ -13,31 +15,33 @@
   noindex: p.status !== 'published',
   editUrl: `/admin/products/${p.id}/edit`,
 }) %>
+<div class="read-progress" aria-hidden="true"></div>
 
 <div class="wrap">
-  <nav class="crumbs" aria-label="Навигация">
-    <a href="/catalog">Каталог</a><span>/</span>
-    <% if (p.category_slug) { %><a href="/catalog?category=<%= p.category_slug %>"><%= p.category_name %></a><span>/</span><% } %>
+  <nav class="crumbs" aria-label="<%= t('a11y.crumbs') %>">
+    <a href="<%= L('/catalog') %>"><%= t('nav.catalog') %></a><span>/</span>
+    <% if (p.category_slug) { %><a href="<%= L(`/catalog?category=${p.category_slug}`) %>"><%= p.category_name %></a><span>/</span><% } %>
     <span><%= p.code %></span>
   </nav>
   <% if (p.status !== 'published') { %>
-  <div class="draft-banner">Это черновик — его видят только администраторы. <a href="/admin/products/<%= p.id %>/edit">Открыть в админке</a></div>
+  <div class="draft-banner"><%= t('product.draft') %> <a href="/admin/products/<%= p.id %>/edit"><%= t('product.openAdmin') %></a></div>
   <% } %>
 
   <section class="product-hero">
-    <div>
+    <div class="product-intro">
       <div class="product-tags">
-        <% if (p.category_name) { %><a class="tag tag-solid" href="/catalog?category=<%= p.category_slug %>"><%= p.category_name %></a><% } %>
-        <% p.tagList.forEach((t) => { %><a class="tag" href="/catalog?tag=<%= encodeURIComponent(t) %>">#<%= t %></a><% }) %>
+        <% if (p.category_name) { %><a class="tag tag-solid" href="<%= L(`/catalog?category=${p.category_slug}`) %>"><%= p.category_name %></a><% } %>
+        <%# теги ведутся только по-русски — на казахской и английской версиях их не показываем %>
+        <% if (lang === 'ru') p.tagList.forEach((tg) => { %><a class="tag" href="<%= L(`/catalog?tag=${encodeURIComponent(tg)}`) %>">#<%= tg %></a><% }) %>
       </div>
       <h1><%= p.title %></h1>
       <% if (p.tagline) { %><p class="product-tagline"><%= p.tagline %></p><% } %>
       <div class="hero-actions">
-        <a class="btn" href="#request">Оставить заявку <span class="arrow">→</span></a>
-        <% if (p.demo_url) { %><a class="btn btn-ghost" href="<%= p.demo_url %>" target="_blank" rel="noopener">Смотреть демо ↗</a><% } %>
+        <a class="btn" href="#request"><%= t('cta.request') %> <span class="arrow">→</span></a>
+        <% if (p.demo_url) { %><a class="btn btn-ghost" href="<%= p.demo_url %>" target="_blank" rel="noopener"><%= t('product.demo') %></a><% } %>
       </div>
     </div>
-    <div class="product-media">
+    <div class="product-media" style="view-transition-name: media-<%= p.id %>">
       <% if (p.cover) { %><img src="/uploads/<%= p.cover %>" alt="<%= p.title %>"><% } else { %><%- coverArt(p.id) %><% } %>
     </div>
   </section>
@@ -45,20 +49,20 @@
   <div class="product-layout">
     <div>
       <% if (p.description) { %>
-      <section class="block">
-        <h2>О разработке</h2>
+      <section class="block reveal">
+        <h2><%= t('product.about') %></h2>
         <div class="prose"><%- md(p.description) %></div>
       </section>
       <% } %>
       <% if (feats.length) { %>
-      <section class="block">
-        <h2>Что входит</h2>
-        <ul class="features"><% feats.forEach((f) => { %><li><%= f %></li><% }) %></ul>
+      <section class="block reveal">
+        <h2><%= t('product.includes') %></h2>
+        <ul class="features"><% feats.forEach((f, i) => { %><li class="reveal" style="--d:<%= i % 4 %>"><%= f %></li><% }) %></ul>
       </section>
       <% } %>
       <% if (mods.length) { %>
-      <section class="block">
-        <h2>Программа</h2>
+      <section class="block reveal">
+        <h2><%= t('product.program') %></h2>
         <ol class="modules">
           <% mods.forEach((m, i) => { %>
           <li><span class="idx"><%= String(i + 1).padStart(2, '0') %></span><div><strong><%= m.title %></strong><% if (m.text) { %><span><%= m.text %></span><% } %></div></li>
@@ -67,8 +71,8 @@
       </section>
       <% } %>
       <% if (p.galleryList.length) { %>
-      <section class="block">
-        <h2>Как это выглядит</h2>
+      <section class="block reveal">
+        <h2><%= t('product.gallery') %></h2>
         <div class="gallery">
           <% p.galleryList.forEach((img) => { %><a href="/uploads/<%= img %>" target="_blank" rel="noopener"><img src="/uploads/<%= img %>" alt="" loading="lazy"></a><% }) %>
         </div>
@@ -76,12 +80,12 @@
       <% } %>
     </div>
 
-    <aside class="order-card" aria-label="Стоимость и заказ">
-      <span class="eyebrow">Стоимость</span>
+    <aside class="order-card" aria-label="<%= t('product.orderAria') %>">
+      <span class="eyebrow"><%= t('product.price') %></span>
       <div class="price h-gap"><%= fmtPrice(p.price) %></div>
       <% if (p.price_note) { %><span class="price-note"><%= p.price_note %></span><% } %>
-      <a class="btn btn-block" href="#request">Оставить заявку <span class="arrow">→</span></a>
-      <% if (p.demo_url) { %><a class="btn btn-ghost btn-block" href="<%= p.demo_url %>" target="_blank" rel="noopener">Смотреть демо ↗</a><% } %>
+      <a class="btn btn-block" href="#request"><%= t('cta.request') %> <span class="arrow">→</span></a>
+      <% if (p.demo_url) { %><a class="btn btn-ghost btn-block" href="<%= p.demo_url %>" target="_blank" rel="noopener"><%= t('product.demo') %></a><% } %>
       <% if (facts.length) { %>
       <dl class="facts">
         <% facts.forEach(([k, v]) => { %><div><dt><%= k %></dt><dd><%= v %></dd></div><% }) %>
@@ -93,13 +97,13 @@
 
 <section class="section" id="request">
   <div class="wrap contact-grid">
-    <div>
-      <span class="eyebrow">Заявка</span>
-      <h2 class="h-gap">Хотите внедрить «<%= p.title %>»?</h2>
-      <p class="muted lead-gap">Оставьте контакты — расскажем подробнее, покажем демо и подготовим предложение для вашей школы.</p>
+    <div class="reveal">
+      <span class="eyebrow"><%= t('product.request.eyebrow') %></span>
+      <h2 class="h-gap"><%= t('product.request.title', { title: p.title }) %></h2>
+      <p class="muted lead-gap"><%= t('product.request.lead') %></p>
       <%- include('partials/contacts') %>
     </div>
-    <div>
+    <div class="reveal" style="--d:1">
       <%- include('partials/lead-form', { product: p, values, errors, anchor: 'request' }) %>
     </div>
   </div>
@@ -108,11 +112,11 @@
 <% if (related.length) { %>
 <section class="section">
   <div class="wrap">
-    <div class="section-head">
-      <div><span class="eyebrow">Ещё в каталоге</span><h2>Похожие разработки</h2></div>
-      <a class="link-arrow" href="/catalog">Весь каталог →</a>
+    <div class="section-head reveal">
+      <div><span class="eyebrow"><%= t('product.related.eyebrow') %></span><h2><%= t('product.related.title') %></h2></div>
+      <a class="link-arrow" href="<%= L('/catalog') %>"><%= t('home.allCatalog') %></a>
     </div>
-    <div class="grid"><% related.forEach((r) => { %><%- include('partials/card', { p: r }) %><% }) %></div>
+    <div class="grid"><% related.forEach((r, i) => { %><div class="reveal" style="--d:<%= i %>"><%- include('partials/card', { p: r }) %></div><% }) %></div>
   </div>
 </section>
 <% } %>

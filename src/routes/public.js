@@ -1,26 +1,28 @@
 import express from 'express';
 import { createRateLimiter } from '../auth.js';
+import {
+  LANG_META, LANGS, localePath, localizeCategory, localizeProduct,
+} from '../i18n.js';
 import { notifyNewLead } from '../notify.js';
 import { str, toInt } from '../util.js';
 
-const SORT_LABELS = {
-  recommended: 'Рекомендуемые',
-  new: 'Сначала новые',
-  price_asc: 'Сначала дешевле',
-  price_desc: 'Сначала дороже',
-};
+const SORTS = ['recommended', 'new', 'price_asc', 'price_desc'];
 
 export function publicRoutes({ store, config }) {
   const router = express.Router();
   const leadLimiter = createRateLimiter({ max: 6, windowMs: 10 * 60 * 1000 });
 
   const publishedOnly = (product) => (product?.status === 'published' ? product : null);
+  // контент из базы — на языке страницы (пустые переводы → русский текст)
+  const lp = (req, p) => localizeProduct(p, req.lang);
+  const lps = (req, list) => list.map((p) => localizeProduct(p, req.lang));
+  const lcs = (req, list) => list.map((c) => localizeCategory(c, req.lang));
 
   router.get('/', async (req, res) => {
     const [featured, categories] = await Promise.all([store.listFeatured(6), store.listCategories()]);
     res.render('home', {
-      featured,
-      categories,
+      featured: lps(req, featured),
+      categories: lcs(req, categories),
       totalPublished: categories.reduce((sum, c) => sum + c.count, 0) || (await store.countProducts()).published,
     });
   });
@@ -30,18 +32,18 @@ export function publicRoutes({ store, config }) {
       category: str(req.query.category, 80),
       q: str(req.query.q, 100),
       tag: str(req.query.tag, 40),
-      sort: SORT_LABELS[req.query.sort] ? req.query.sort : 'recommended',
+      sort: SORTS.includes(req.query.sort) ? req.query.sort : 'recommended',
     };
-    const categories = await store.listCategories();
+    const categories = lcs(req, await store.listCategories());
     const activeCategory = categories.find((c) => c.slug === filters.category) || null;
     if (filters.category && !activeCategory) filters.category = '';
     const [products, tags] = await Promise.all([store.listPublished(filters), store.allTags()]);
     res.render('catalog', {
-      products,
+      products: lps(req, products),
       categories,
       activeCategory,
       filters,
-      sortLabels: SORT_LABELS,
+      sortLabels: Object.fromEntries(SORTS.map((k) => [k, res.locals.t(`sort.${k}`)])),
       tags: tags.slice(0, 12),
       totalPublished: categories.reduce((sum, c) => sum + c.count, 0),
     });
@@ -51,8 +53,8 @@ export function publicRoutes({ store, config }) {
     const product = await store.getProductBySlug(req.params.slug);
     if (!product || (product.status !== 'published' && !req.user)) return next();
     return res.render('product', {
-      product,
-      related: await store.listRelated(product, 3),
+      product: lp(req, product),
+      related: lps(req, await store.listRelated(product, 3)),
       values: {},
       errors: {},
     });
@@ -60,13 +62,14 @@ export function publicRoutes({ store, config }) {
 
   router.get('/request', async (req, res) => {
     const product = req.query.product ? await store.getProductBySlug(str(req.query.product, 100)) : null;
-    res.render('request', { product: publishedOnly(product), values: {}, errors: {} });
+    res.render('request', { product: lp(req, publishedOnly(product)), values: {}, errors: {} });
   });
 
   router.post('/request', express.urlencoded({ extended: false, limit: '64kb' }), async (req, res) => {
+    const { t, L } = res.locals;
     const body = req.body || {};
     // Скрытое поле-ловушка для ботов: люди его не видят и не заполняют
-    if (str(body.website)) return res.redirect(303, '/thanks');
+    if (str(body.website)) return res.redirect(303, L('/thanks'));
 
     const values = {
       name: str(body.name, 120),
@@ -78,26 +81,27 @@ export function publicRoutes({ store, config }) {
     const product = publishedOnly(productId ? await store.getProduct(productId) : null);
 
     const errors = {};
-    if (values.name.length < 2) errors.name = 'Как к вам обращаться?';
-    if (values.contact.length < 5) errors.contact = 'Оставьте телефон, e-mail или Telegram — иначе мы не сможем ответить.';
+    if (values.name.length < 2) errors.name = t('form.err.name');
+    if (values.contact.length < 5) errors.contact = t('form.err.contact');
 
     if (!Object.keys(errors).length && !leadLimiter.hit(req.ip)) {
-      errors.form = 'Слишком много заявок подряд. Попробуйте через несколько минут или напишите нам напрямую.';
+      errors.form = t('form.err.rate');
     }
     if (Object.keys(errors).length) {
-      return res.status(422).render('request', { product, values, errors });
+      return res.status(422).render('request', { product: lp(req, product), values, errors });
     }
 
-    const lead = { ...values, product_id: product?.id ?? null, product_title: product?.title ?? '' };
+    // в админку и Telegram название уходит по-русски, а язык заявки сохраняем отдельно
+    const lead = { ...values, product_id: product?.id ?? null, product_title: product?.title ?? '', lang: req.lang };
     const id = await store.createLead(lead);
     // ждём отправку уведомления: на бессерверном хостинге фоновые задачи обрываются после ответа
     await notifyNewLead(config, lead, { adminUrl: `${res.locals.siteUrl}/admin/leads#lead-${id}` });
-    return res.redirect(303, `/thanks${product ? `?product=${encodeURIComponent(product.slug)}` : ''}`);
+    return res.redirect(303, L(`/thanks${product ? `?product=${encodeURIComponent(product.slug)}` : ''}`));
   });
 
   router.get('/thanks', async (req, res) => {
     const product = req.query.product ? await store.getProductBySlug(str(req.query.product, 100)) : null;
-    res.render('thanks', { product: publishedOnly(product) });
+    res.render('thanks', { product: lp(req, publishedOnly(product)) });
   });
 
   router.get('/robots.txt', (req, res) => {
@@ -107,19 +111,25 @@ export function publicRoutes({ store, config }) {
   router.get('/sitemap.xml', async (req, res) => {
     const base = res.locals.siteUrl;
     const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
-    const urls = [
-      { loc: `${base}/` },
-      { loc: `${base}/catalog` },
+    const pages = [
+      { path: '/' },
+      { path: '/catalog' },
       ...(await store.listPublished()).map((p) => ({
-        loc: `${base}/catalog/${p.slug}`,
+        path: `/catalog/${p.slug}`,
         lastmod: new Date(p.updated_at).toISOString().slice(0, 10),
       })),
     ];
-    const body = urls
-      .map((u) => `  <url><loc>${esc(u.loc)}</loc>${u.lastmod ? `<lastmod>${u.lastmod}</lastmod>` : ''}</url>`)
-      .join('\n');
+    // каждая страница — на всех языках, со ссылками на версии друг друга
+    const urls = pages.flatMap(({ path, lastmod }) => {
+      const alternates = LANGS.map((l) => `<xhtml:link rel="alternate" hreflang="${LANG_META[l].hreflang}" href="${esc(base + localePath(l, path))}"/>`)
+        .concat(`<xhtml:link rel="alternate" hreflang="x-default" href="${esc(base + path)}"/>`)
+        .join('');
+      return LANGS.map((l) => `  <url><loc>${esc(base + localePath(l, path))}</loc>${lastmod ? `<lastmod>${lastmod}</lastmod>` : ''}${alternates}</url>`);
+    });
     res.type('application/xml').send(
-      `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${body}\n</urlset>\n`,
+      '<?xml version="1.0" encoding="UTF-8"?>\n'
+      + '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n'
+      + `${urls.join('\n')}\n</urlset>\n`,
     );
   });
 

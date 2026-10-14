@@ -1,9 +1,12 @@
+import { LANG_META } from './i18n.js';
+
 /** Отправляет уведомление о новой заявке в Telegram, если заданы токен и чат. */
 export async function notifyNewLead(config, lead, { adminUrl = '' } = {}) {
   if (!config.telegramToken || !config.telegramChatId) return;
   const text = [
     '🆕 Новая заявка CC Lab',
     lead.product_title ? `Разработка: ${lead.product_title}` : null,
+    lead.lang && lead.lang !== 'ru' ? `Язык сайта: ${LANG_META[lead.lang]?.name ?? lead.lang}` : null,
     `Имя: ${lead.name}`,
     lead.organization ? `Организация: ${lead.organization}` : null,
     `Контакт: ${lead.contact}`,
